@@ -205,7 +205,7 @@ async def get_news_by_category(category: str) -> List[NewsArticle]:
 
 @app.get("/api/health")
 async def health_check():
-    return {"status": "healthy", "service": "European News RSS API"}
+    return {"status": "healthy", "service": "Verityn News API"}
 
 @app.get("/api/categories")
 async def get_categories():
