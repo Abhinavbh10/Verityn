@@ -19,7 +19,7 @@ import {
   getNotificationSettings,
   saveNotificationSettings,
   NotificationSettings,
-} from '../utils/notifications';
+} from '../../src/utils/notifications';
 
 const STORAGE_KEY = '@user_preferences';
 

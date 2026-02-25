@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { format, parseISO, isValid } from 'date-fns';
 import * as WebBrowser from 'expo-web-browser';
 import { useFocusEffect } from 'expo-router';
-import { getBookmarks, removeBookmark, clearAllBookmarks, BookmarkedArticle } from '../utils/bookmarks';
+import { getBookmarks, removeBookmark, clearAllBookmarks, BookmarkedArticle } from '../../src/utils/bookmarks';
 
 const CATEGORIES = [
   { id: 'politics', name: 'Politics', color: '#3B82F6' },

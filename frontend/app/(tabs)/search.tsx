@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { format, parseISO, isValid } from 'date-fns';
 import * as WebBrowser from 'expo-web-browser';
 import Constants from 'expo-constants';
-import { addBookmark, removeBookmark, getBookmarks } from '../utils/bookmarks';
+import { addBookmark, removeBookmark, getBookmarks } from '../../src/utils/bookmarks';
 
 interface Article {
   id: string;
