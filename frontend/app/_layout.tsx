@@ -16,13 +16,6 @@ export default function RootLayout() {
       >
         <Stack.Screen name="index" />
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen 
-          name="article" 
-          options={{
-            presentation: 'modal',
-            animation: 'slide_from_bottom',
-          }}
-        />
       </Stack>
     </SafeAreaProvider>
   );
