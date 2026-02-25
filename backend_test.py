@@ -427,6 +427,260 @@ def test_invalid_category(test_result: TestResult):
             f"Request failed: {str(e)}"
         )
 
+def test_search_endpoint_basic(test_result: TestResult):
+    """Test GET /api/search?q=climate - Should return articles containing 'climate'"""
+    try:
+        params = {"q": "climate"}
+        response = requests.get(f"{BACKEND_URL}/search", params=params, timeout=30)
+        
+        if response.status_code != 200:
+            test_result.add_result(
+                "Search Basic (climate)", False, 
+                f"Expected status 200, got {response.status_code}",
+                response.text
+            )
+            return
+            
+        data = response.json()
+        
+        # Check response structure
+        required_fields = ["articles", "total", "query", "categories_searched"]
+        for field in required_fields:
+            if field not in data:
+                test_result.add_result(
+                    "Search Response Structure", False, 
+                    f"Response missing required field '{field}'",
+                    data
+                )
+                return
+                
+        test_result.add_result(
+            "Search Response Structure", True, 
+            "Search response has all required fields"
+        )
+        
+        # Check query field matches
+        if data["query"] != "climate":
+            test_result.add_result(
+                "Search Query Field", False, 
+                f"Query field should be 'climate', got '{data['query']}'"
+            )
+        else:
+            test_result.add_result(
+                "Search Query Field", True, 
+                "Query field correctly returned"
+            )
+        
+        articles = data["articles"]
+        
+        if len(articles) == 0:
+            test_result.add_result(
+                "Search Results (climate)", False, 
+                "No articles found for 'climate' - might indicate RSS feeds issue or no recent climate articles"
+            )
+        else:
+            # Verify articles contain the search term
+            articles_with_climate = []
+            for article in articles[:5]:  # Check first 5 articles
+                if "climate" in article["title"].lower() or "climate" in article["description"].lower():
+                    articles_with_climate.append(article["title"])
+            
+            if len(articles_with_climate) > 0:
+                test_result.add_result(
+                    "Search Results (climate)", True, 
+                    f"Found {len(articles)} articles, verified {len(articles_with_climate)} contain 'climate'"
+                )
+            else:
+                test_result.add_result(
+                    "Search Results (climate)", False, 
+                    f"Found {len(articles)} articles but none contain 'climate' in title/description"
+                )
+        
+    except Exception as e:
+        test_result.add_result(
+            "Search Basic (climate)", False, 
+            f"Request failed: {str(e)}"
+        )
+
+def test_search_endpoint_with_limit(test_result: TestResult):
+    """Test GET /api/search?q=AI&limit=5 - Should return max 5 articles about AI"""
+    try:
+        params = {"q": "AI", "limit": 5}
+        response = requests.get(f"{BACKEND_URL}/search", params=params, timeout=30)
+        
+        if response.status_code != 200:
+            test_result.add_result(
+                "Search with Limit (AI)", False, 
+                f"Expected status 200, got {response.status_code}",
+                response.text
+            )
+            return
+            
+        data = response.json()
+        articles = data["articles"]
+        
+        # Check limit is respected
+        if len(articles) > 5:
+            test_result.add_result(
+                "Search Limit Enforcement", False, 
+                f"Expected max 5 articles, got {len(articles)}"
+            )
+        else:
+            test_result.add_result(
+                "Search Limit Enforcement", True, 
+                f"Limit respected (got {len(articles)} articles)"
+            )
+        
+        # Check query field matches
+        if data["query"] != "AI":
+            test_result.add_result(
+                "Search Query (AI)", False, 
+                f"Query field should be 'AI', got '{data['query']}'"
+            )
+        else:
+            test_result.add_result(
+                "Search Query (AI)", True, 
+                "Query field correctly returned for AI search"
+            )
+        
+        # If we got articles, verify they contain AI
+        if len(articles) > 0:
+            ai_articles = []
+            for article in articles:
+                if "ai" in article["title"].lower() or "ai" in article["description"].lower():
+                    ai_articles.append(article["title"])
+            
+            if len(ai_articles) > 0:
+                test_result.add_result(
+                    "Search Content Match (AI)", True, 
+                    f"Found {len(articles)} articles, {len(ai_articles)} contain 'AI'"
+                )
+            else:
+                test_result.add_result(
+                    "Search Content Match (AI)", False, 
+                    f"Found {len(articles)} articles but none contain 'AI' in title/description"
+                )
+        else:
+            test_result.add_result(
+                "Search Results (AI)", False, 
+                "No articles found for 'AI' - might indicate RSS feeds issue"
+            )
+        
+    except Exception as e:
+        test_result.add_result(
+            "Search with Limit (AI)", False, 
+            f"Request failed: {str(e)}"
+        )
+
+def test_search_endpoint_validation(test_result: TestResult):
+    """Test GET /api/search?q=a - Should return 422 error (minimum 2 characters required)"""
+    try:
+        params = {"q": "a"}
+        response = requests.get(f"{BACKEND_URL}/search", params=params, timeout=10)
+        
+        if response.status_code == 422:
+            test_result.add_result(
+                "Search Validation (min length)", True, 
+                "Correctly returns 422 for single character query"
+            )
+        elif response.status_code == 400:
+            test_result.add_result(
+                "Search Validation (min length)", True, 
+                "Returns 400 for single character query (acceptable error code)"
+            )
+        else:
+            test_result.add_result(
+                "Search Validation (min length)", False, 
+                f"Expected status 422 or 400, got {response.status_code}",
+                response.text
+            )
+        
+    except Exception as e:
+        test_result.add_result(
+            "Search Validation (min length)", False, 
+            f"Request failed: {str(e)}"
+        )
+
+def test_search_endpoint_with_categories(test_result: TestResult):
+    """Test GET /api/search?q=technology&categories=business,science - Should search only in specified categories"""
+    try:
+        params = {
+            "q": "technology", 
+            "categories": "business,science"
+        }
+        response = requests.get(f"{BACKEND_URL}/search", params=params, timeout=45)
+        
+        if response.status_code != 200:
+            test_result.add_result(
+                "Search with Categories Filter", False, 
+                f"Expected status 200, got {response.status_code}",
+                response.text
+            )
+            return
+            
+        data = response.json()
+        
+        # Check categories_searched field
+        expected_categories = ["business", "science"]
+        categories_searched = data.get("categories_searched", [])
+        
+        if set(categories_searched) != set(expected_categories):
+            test_result.add_result(
+                "Search Categories Searched Field", False, 
+                f"Expected categories {expected_categories}, got {categories_searched}"
+            )
+        else:
+            test_result.add_result(
+                "Search Categories Searched Field", True, 
+                "Correctly shows searched categories"
+            )
+        
+        articles = data["articles"]
+        
+        if len(articles) > 0:
+            # Check that articles only come from specified categories
+            article_categories = [article["category"] for article in articles]
+            invalid_categories = [cat for cat in article_categories if cat not in expected_categories]
+            
+            if invalid_categories:
+                test_result.add_result(
+                    "Search Category Filtering", False, 
+                    f"Found articles from unexpected categories: {set(invalid_categories)}"
+                )
+            else:
+                test_result.add_result(
+                    "Search Category Filtering", True, 
+                    f"All {len(articles)} articles are from requested categories only"
+                )
+            
+            # Check if articles contain 'technology'
+            tech_articles = []
+            for article in articles[:5]:  # Check first 5
+                if "technology" in article["title"].lower() or "technology" in article["description"].lower():
+                    tech_articles.append(article["title"])
+            
+            if len(tech_articles) > 0:
+                test_result.add_result(
+                    "Search Content Match (technology)", True, 
+                    f"Found {len(articles)} articles, {len(tech_articles)} contain 'technology'"
+                )
+            else:
+                test_result.add_result(
+                    "Search Content Match (technology)", False, 
+                    f"Found {len(articles)} articles but none contain 'technology' in title/description"
+                )
+        else:
+            test_result.add_result(
+                "Search with Categories Results", False, 
+                "No articles found for 'technology' in business/science categories"
+            )
+        
+    except Exception as e:
+        test_result.add_result(
+            "Search with Categories Filter", False, 
+            f"Request failed: {str(e)}"
+        )
+
 def main():
     print("🧪 Starting European News RSS API Backend Tests")
     print(f"🔗 Testing backend at: {BACKEND_URL}")
