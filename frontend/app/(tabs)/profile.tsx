@@ -7,11 +7,19 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Switch,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import {
+  requestNotificationPermissions,
+  getNotificationSettings,
+  saveNotificationSettings,
+  NotificationSettings,
+} from '../utils/notifications';
 
 const STORAGE_KEY = '@user_preferences';
 
@@ -37,9 +45,16 @@ export default function ProfileScreen() {
   const [originalCategories, setOriginalCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>({
+    enabled: false,
+    dailyDigest: false,
+    digestTime: '09:00',
+    categories: [],
+  });
 
   useEffect(() => {
     loadPreferences();
+    loadNotificationSettings();
   }, []);
 
   const loadPreferences = async () => {
@@ -54,6 +69,11 @@ export default function ProfileScreen() {
       console.error('Error loading preferences:', error);
     }
     setLoading(false);
+  };
+
+  const loadNotificationSettings = async () => {
+    const settings = await getNotificationSettings();
+    setNotificationSettings(settings);
   };
 
   const toggleCategory = (categoryId: string) => {
@@ -89,6 +109,29 @@ export default function ProfileScreen() {
       Alert.alert('Error', 'Failed to save preferences');
     }
     setSaving(false);
+  };
+
+  const toggleNotifications = async (value: boolean) => {
+    if (value) {
+      const granted = await requestNotificationPermissions();
+      if (!granted) {
+        Alert.alert(
+          'Permission Required',
+          'Please enable notifications in your device settings to receive news updates.'
+        );
+        return;
+      }
+    }
+    
+    const newSettings = { ...notificationSettings, enabled: value };
+    setNotificationSettings(newSettings);
+    await saveNotificationSettings(newSettings);
+  };
+
+  const toggleDailyDigest = async (value: boolean) => {
+    const newSettings = { ...notificationSettings, dailyDigest: value };
+    setNotificationSettings(newSettings);
+    await saveNotificationSettings(newSettings);
   };
 
   const resetPreferences = () => {
@@ -131,10 +174,53 @@ export default function ProfileScreen() {
           <View style={styles.profileIcon}>
             <Ionicons name="person" size={40} color="#3B82F6" />
           </View>
-          <Text style={styles.headerTitle}>Profile Settings</Text>
+          <Text style={styles.headerTitle}>Settings</Text>
           <Text style={styles.headerSubtitle}>
-            Customize your news preferences
+            Customize your news experience
           </Text>
+        </View>
+
+        {/* Notifications Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Notifications</Text>
+          
+          <View style={styles.settingRow}>
+            <View style={styles.settingInfo}>
+              <View style={[styles.settingIcon, { backgroundColor: '#3B82F620' }]}>
+                <Ionicons name="notifications" size={20} color="#3B82F6" />
+              </View>
+              <View>
+                <Text style={styles.settingLabel}>Push Notifications</Text>
+                <Text style={styles.settingDescription}>Receive news alerts</Text>
+              </View>
+            </View>
+            <Switch
+              value={notificationSettings.enabled}
+              onValueChange={toggleNotifications}
+              trackColor={{ false: '#334155', true: '#3B82F680' }}
+              thumbColor={notificationSettings.enabled ? '#3B82F6' : '#64748B'}
+            />
+          </View>
+
+          {notificationSettings.enabled && (
+            <View style={styles.settingRow}>
+              <View style={styles.settingInfo}>
+                <View style={[styles.settingIcon, { backgroundColor: '#F59E0B20' }]}>
+                  <Ionicons name="sunny" size={20} color="#F59E0B" />
+                </View>
+                <View>
+                  <Text style={styles.settingLabel}>Daily Digest</Text>
+                  <Text style={styles.settingDescription}>Get news summary at 9:00 AM</Text>
+                </View>
+              </View>
+              <Switch
+                value={notificationSettings.dailyDigest}
+                onValueChange={toggleDailyDigest}
+                trackColor={{ false: '#334155', true: '#F59E0B80' }}
+                thumbColor={notificationSettings.dailyDigest ? '#F59E0B' : '#64748B'}
+              />
+            </View>
+          )}
         </View>
 
         {/* Categories Section */}
@@ -221,7 +307,7 @@ export default function ProfileScreen() {
         {/* App Info */}
         <View style={styles.appInfo}>
           <Text style={styles.appName}>EuroNews</Text>
-          <Text style={styles.appVersion}>Version 1.0.0</Text>
+          <Text style={styles.appVersion}>Version 1.1.0</Text>
           <Text style={styles.appCopyright}>
             Your gateway to European news
           </Text>
@@ -250,8 +336,8 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: 32,
-    paddingTop: 16,
+    marginBottom: 28,
+    paddingTop: 8,
   },
   profileIcon: {
     width: 80,
@@ -285,6 +371,37 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#64748B',
     marginBottom: 16,
+  },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#1E293B',
+    padding: 14,
+    borderRadius: 12,
+    marginBottom: 10,
+  },
+  settingInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  settingIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  settingLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#F8FAFC',
+  },
+  settingDescription: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 2,
   },
   categoriesGrid: {
     flexDirection: 'row',

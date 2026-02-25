@@ -7,7 +7,6 @@ import {
   RefreshControl,
   ActivityIndicator,
   ScrollView,
-  Linking,
   Image,
   Platform,
 } from 'react-native';
@@ -16,7 +15,9 @@ import { FlashList } from '@shopify/flash-list';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { format, parseISO, isValid } from 'date-fns';
+import * as WebBrowser from 'expo-web-browser';
 import Constants from 'expo-constants';
+import { addBookmark, removeBookmark, getBookmarks } from '../utils/bookmarks';
 
 const STORAGE_KEY = '@user_preferences';
 
@@ -59,10 +60,17 @@ export default function HomeScreen() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const [error, setError] = useState<string | null>(null);
+  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadPreferencesAndFetch();
+    loadBookmarks();
   }, []);
+
+  const loadBookmarks = async () => {
+    const bookmarks = await getBookmarks();
+    setBookmarkedIds(new Set(bookmarks.map(b => b.id)));
+  };
 
   const loadPreferencesAndFetch = async () => {
     try {
@@ -104,6 +112,7 @@ export default function HomeScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
+    await loadBookmarks();
     await fetchNews(selectedCategories);
   }, [selectedCategories]);
 
@@ -128,12 +137,35 @@ export default function HomeScreen() {
     ? articles 
     : articles.filter(a => a.category.toLowerCase() === activeFilter);
 
-  const openArticle = (url: string) => {
-    Linking.openURL(url).catch(err => console.error('Error opening URL:', err));
+  const openArticle = async (url: string) => {
+    try {
+      await WebBrowser.openBrowserAsync(url, {
+        toolbarColor: '#0F172A',
+        controlsColor: '#3B82F6',
+        presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
+      });
+    } catch (error) {
+      console.error('Error opening URL:', error);
+    }
+  };
+
+  const toggleBookmark = async (article: Article) => {
+    if (bookmarkedIds.has(article.id)) {
+      await removeBookmark(article.id);
+      setBookmarkedIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(article.id);
+        return newSet;
+      });
+    } else {
+      await addBookmark(article);
+      setBookmarkedIds(prev => new Set(prev).add(article.id));
+    }
   };
 
   const renderArticle = ({ item }: { item: Article }) => {
     const categoryColor = getCategoryColor(item.category);
+    const isBookmarked = bookmarkedIds.has(item.id);
     
     return (
       <TouchableOpacity
@@ -155,7 +187,17 @@ export default function HomeScreen() {
                 {item.category}
               </Text>
             </View>
-            <Text style={styles.sourceText}>{item.source}</Text>
+            <TouchableOpacity
+              onPress={() => toggleBookmark(item)}
+              style={styles.bookmarkButton}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons
+                name={isBookmarked ? 'bookmark' : 'bookmark-outline'}
+                size={22}
+                color={isBookmarked ? '#F59E0B' : '#64748B'}
+              />
+            </TouchableOpacity>
           </View>
           <Text style={styles.articleTitle} numberOfLines={3}>
             {item.title}
@@ -164,8 +206,14 @@ export default function HomeScreen() {
             {item.description}
           </Text>
           <View style={styles.articleFooter}>
-            <Ionicons name="time-outline" size={14} color="#64748B" />
-            <Text style={styles.dateText}>{formatDate(item.published)}</Text>
+            <View style={styles.sourceRow}>
+              <Ionicons name="newspaper-outline" size={14} color="#64748B" />
+              <Text style={styles.sourceText}>{item.source}</Text>
+            </View>
+            <View style={styles.dateRow}>
+              <Ionicons name="time-outline" size={14} color="#64748B" />
+              <Text style={styles.dateText}>{formatDate(item.published)}</Text>
+            </View>
           </View>
         </View>
       </TouchableOpacity>
@@ -418,10 +466,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textTransform: 'capitalize',
   },
-  sourceText: {
-    fontSize: 12,
-    color: '#64748B',
-    fontWeight: '500',
+  bookmarkButton: {
+    padding: 4,
   },
   articleTitle: {
     fontSize: 17,
@@ -439,7 +485,21 @@ const styles = StyleSheet.create({
   articleFooter: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    justifyContent: 'space-between',
+  },
+  sourceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  sourceText: {
+    fontSize: 12,
+    color: '#64748B',
+  },
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   dateText: {
     fontSize: 12,
