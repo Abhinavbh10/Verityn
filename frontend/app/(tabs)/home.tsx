@@ -378,8 +378,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#1E293B',
   },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
     color: '#F8FAFC',
   },
