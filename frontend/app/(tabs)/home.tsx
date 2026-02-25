@@ -236,9 +236,21 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>EuroNews</Text>
-          <Text style={styles.headerSubtitle}>Latest from Europe</Text>
+        <View style={styles.headerLeft}>
+          <Svg width={32} height={32} viewBox="0 0 100 100">
+            <Defs>
+              <LinearGradient id="headerLogo" x1="0%" y1="0%" x2="100%" y2="100%">
+                <Stop offset="0%" stopColor="#3B82F6" />
+                <Stop offset="100%" stopColor="#8B5CF6" />
+              </LinearGradient>
+            </Defs>
+            <Circle cx="50" cy="50" r="45" fill="none" stroke="url(#headerLogo)" strokeWidth="4" />
+            <Path d="M30 35 L50 70 L70 35" fill="none" stroke="url(#headerLogo)" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
+          </Svg>
+          <View>
+            <Text style={styles.headerTitle}>Verityn</Text>
+            <Text style={styles.headerSubtitle}>European News</Text>
+          </View>
         </View>
         <TouchableOpacity onPress={onRefresh} style={styles.refreshButton}>
           <Ionicons name="refresh" size={24} color="#3B82F6" />
