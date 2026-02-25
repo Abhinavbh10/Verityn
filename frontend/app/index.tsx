@@ -99,10 +99,23 @@ export default function WelcomeScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.logoContainer}>
-            <Ionicons name="newspaper" size={48} color="#3B82F6" />
+            <Svg width={56} height={56} viewBox="0 0 100 100">
+              <Defs>
+                <LinearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <Stop offset="0%" stopColor="#3B82F6" />
+                  <Stop offset="50%" stopColor="#8B5CF6" />
+                  <Stop offset="100%" stopColor="#06B6D4" />
+                </LinearGradient>
+              </Defs>
+              <Circle cx="50" cy="50" r="45" fill="none" stroke="url(#logoGradient)" strokeWidth="3" />
+              <Path d="M30 35 L50 70 L70 35" fill="none" stroke="url(#logoGradient)" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+              <Path d="M25 25 L40 25" fill="none" stroke="#3B82F6" strokeWidth="3" strokeLinecap="round" opacity="0.7" />
+              <Path d="M60 25 L75 25" fill="none" stroke="#06B6D4" strokeWidth="3" strokeLinecap="round" opacity="0.7" />
+              <Circle cx="50" cy="20" r="4" fill="url(#logoGradient)" />
+            </Svg>
           </View>
-          <Text style={styles.title}>EuroNews</Text>
-          <Text style={styles.subtitle}>Your Gateway to European News</Text>
+          <Text style={styles.title}>Verityn</Text>
+          <Text style={styles.subtitle}>Truth in Every Story</Text>
         </View>
 
         {/* Welcome Text */}
