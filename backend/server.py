@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-app = FastAPI(title="European News RSS API")
+app = FastAPI(title="Verityn News API")
 
 # Enable CORS
 app.add_middleware(
