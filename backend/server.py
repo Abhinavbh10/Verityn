@@ -59,7 +59,7 @@ RSS_FEEDS = {
         {"url": "http://feeds.bbci.co.uk/news/technology/rss.xml", "source": "BBC Technology"},
         {"url": "https://www.theguardian.com/uk/technology/rss", "source": "The Guardian Tech"},
         {"url": "https://rss.dw.com/rdf/rss-en-sci", "source": "DW Science & Tech"},
-        {"url": "https://www.wired.co.uk/feed/rss", "source": "Wired UK"},
+        {"url": "https://www.techradar.com/rss", "source": "TechRadar"},
     ],
     "sports": [
         {"url": "http://feeds.bbci.co.uk/sport/rss.xml", "source": "BBC Sport"},
