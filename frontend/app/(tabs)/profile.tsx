@@ -306,10 +306,10 @@ export default function ProfileScreen() {
 
         {/* App Info */}
         <View style={styles.appInfo}>
-          <Text style={styles.appName}>EuroNews</Text>
+          <Text style={styles.appName}>Verityn</Text>
           <Text style={styles.appVersion}>Version 1.1.0</Text>
           <Text style={styles.appCopyright}>
-            Your gateway to European news
+            Truth in Every Story
           </Text>
         </View>
       </ScrollView>
