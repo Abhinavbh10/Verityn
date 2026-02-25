@@ -287,6 +287,63 @@ async def get_sources():
         sources[category] = [feed['source'] for feed in feeds]
     return {"sources": sources}
 
+@app.get("/api/search")
+async def search_news(
+    q: str = Query(..., min_length=2, description="Search query"),
+    categories: Optional[str] = Query(default=None, description="Comma-separated list of categories to search in"),
+    limit: int = Query(default=30, le=100)
+):
+    """Search news articles by keyword in title and description"""
+    query = q.lower().strip()
+    
+    # Determine which categories to search
+    if categories:
+        category_list = [c.strip().lower() for c in categories.split(',')]
+        valid_categories = list(RSS_FEEDS.keys())
+        category_list = [c for c in category_list if c in valid_categories]
+    else:
+        category_list = list(RSS_FEEDS.keys())
+    
+    if not category_list:
+        raise HTTPException(
+            status_code=400,
+            detail="No valid categories to search in"
+        )
+    
+    # Fetch all articles from selected categories
+    tasks = [get_news_by_category(cat) for cat in category_list]
+    results = await asyncio.gather(*tasks)
+    
+    # Combine all articles
+    all_articles = []
+    for result in results:
+        all_articles.extend(result)
+    
+    # Search in title and description
+    matching_articles = []
+    seen_ids = set()
+    
+    for article in all_articles:
+        if article.id in seen_ids:
+            continue
+        
+        title_match = query in article.title.lower()
+        desc_match = query in article.description.lower()
+        
+        if title_match or desc_match:
+            seen_ids.add(article.id)
+            matching_articles.append(article)
+    
+    # Sort by date
+    matching_articles.sort(key=lambda x: x.published, reverse=True)
+    
+    return {
+        "articles": matching_articles[:limit],
+        "total": len(matching_articles),
+        "query": q,
+        "categories_searched": category_list
+    }
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
