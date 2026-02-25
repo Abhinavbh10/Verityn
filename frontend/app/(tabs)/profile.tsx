@@ -1,9 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
 const STORAGE_KEY = '@user_preferences';
 
@@ -24,30 +32,27 @@ const CATEGORIES: Category[] = [
   { id: 'science', name: 'Science', icon: 'flask', color: '#06B6D4' },
 ];
 
-export default function WelcomeScreen() {
+export default function ProfileScreen() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [originalCategories, setOriginalCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [checking, setChecking] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    checkExistingPreferences();
+    loadPreferences();
   }, []);
 
-  const checkExistingPreferences = async () => {
+  const loadPreferences = async () => {
     try {
       const stored = await AsyncStorage.getItem(STORAGE_KEY);
       if (stored) {
         const preferences = JSON.parse(stored);
-        if (preferences.categories && preferences.categories.length > 0) {
-          // User has preferences, redirect to home
-          router.replace('/(tabs)/home');
-          return;
-        }
+        setSelectedCategories(preferences.categories || []);
+        setOriginalCategories(preferences.categories || []);
       }
     } catch (error) {
-      console.error('Error checking preferences:', error);
+      console.error('Error loading preferences:', error);
     }
-    setChecking(false);
     setLoading(false);
   };
 
@@ -60,27 +65,53 @@ export default function WelcomeScreen() {
     });
   };
 
+  const hasChanges = () => {
+    if (selectedCategories.length !== originalCategories.length) return true;
+    return !selectedCategories.every(cat => originalCategories.includes(cat));
+  };
+
   const savePreferences = async () => {
     if (selectedCategories.length === 0) {
+      Alert.alert('Error', 'Please select at least one category');
       return;
     }
 
-    setLoading(true);
+    setSaving(true);
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({
         categories: selectedCategories,
         updatedAt: new Date().toISOString(),
       }));
-      router.replace('/(tabs)/home');
+      setOriginalCategories(selectedCategories);
+      Alert.alert('Success', 'Your preferences have been saved!');
     } catch (error) {
       console.error('Error saving preferences:', error);
-      setLoading(false);
+      Alert.alert('Error', 'Failed to save preferences');
     }
+    setSaving(false);
   };
 
-  if (checking) {
+  const resetPreferences = () => {
+    Alert.alert(
+      'Reset Preferences',
+      'This will take you back to the welcome screen to choose new categories.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: async () => {
+            await AsyncStorage.removeItem(STORAGE_KEY);
+            router.replace('/');
+          },
+        },
+      ]
+    );
+  };
+
+  if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#3B82F6" />
         </View>
@@ -89,7 +120,7 @@ export default function WelcomeScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView 
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -97,25 +128,22 @@ export default function WelcomeScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <Ionicons name="newspaper" size={48} color="#3B82F6" />
+          <View style={styles.profileIcon}>
+            <Ionicons name="person" size={40} color="#3B82F6" />
           </View>
-          <Text style={styles.title}>EuroNews</Text>
-          <Text style={styles.subtitle}>Your Gateway to European News</Text>
-        </View>
-
-        {/* Welcome Text */}
-        <View style={styles.welcomeSection}>
-          <Text style={styles.welcomeTitle}>Welcome!</Text>
-          <Text style={styles.welcomeText}>
-            Select your favorite news categories to personalize your feed.
-            You can change these anytime in settings.
+          <Text style={styles.headerTitle}>Profile Settings</Text>
+          <Text style={styles.headerSubtitle}>
+            Customize your news preferences
           </Text>
         </View>
 
-        {/* Categories Grid */}
-        <View style={styles.categoriesSection}>
-          <Text style={styles.sectionTitle}>Choose Your Interests</Text>
+        {/* Categories Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>News Categories</Text>
+          <Text style={styles.sectionDescription}>
+            Select the categories you want to see in your feed
+          </Text>
+          
           <View style={styles.categoriesGrid}>
             {CATEGORIES.map((category) => {
               const isSelected = selectedCategories.includes(category.id);
@@ -132,7 +160,7 @@ export default function WelcomeScreen() {
                   <View style={[styles.iconContainer, { backgroundColor: `${category.color}20` }]}>
                     <Ionicons 
                       name={category.icon as any} 
-                      size={28} 
+                      size={24} 
                       color={category.color} 
                     />
                   </View>
@@ -141,7 +169,7 @@ export default function WelcomeScreen() {
                   </Text>
                   {isSelected && (
                     <View style={[styles.checkmark, { backgroundColor: category.color }]}>
-                      <Ionicons name="checkmark" size={14} color="#fff" />
+                      <Ionicons name="checkmark" size={12} color="#fff" />
                     </View>
                   )}
                 </TouchableOpacity>
@@ -150,40 +178,54 @@ export default function WelcomeScreen() {
           </View>
         </View>
 
-        {/* Selection Info */}
-        <Text style={styles.selectionInfo}>
-          {selectedCategories.length} of {CATEGORIES.length} selected
-        </Text>
+        {/* Selection Summary */}
+        <View style={styles.summaryContainer}>
+          <Ionicons name="information-circle" size={20} color="#64748B" />
+          <Text style={styles.summaryText}>
+            {selectedCategories.length} {selectedCategories.length === 1 ? 'category' : 'categories'} selected
+          </Text>
+        </View>
 
-        {/* Continue Button */}
+        {/* Save Button */}
         <TouchableOpacity
           style={[
-            styles.continueButton,
-            selectedCategories.length === 0 && styles.continueButtonDisabled
+            styles.saveButton,
+            (!hasChanges() || selectedCategories.length === 0) && styles.saveButtonDisabled
           ]}
           onPress={savePreferences}
-          disabled={selectedCategories.length === 0 || loading}
+          disabled={!hasChanges() || selectedCategories.length === 0 || saving}
           activeOpacity={0.8}
         >
-          {loading ? (
+          {saving ? (
             <ActivityIndicator color="#fff" />
           ) : (
             <>
-              <Text style={styles.continueButtonText}>Get Started</Text>
-              <Ionicons name="arrow-forward" size={20} color="#fff" />
+              <Ionicons name="checkmark-circle" size={20} color="#fff" />
+              <Text style={styles.saveButtonText}>Save Changes</Text>
             </>
           )}
         </TouchableOpacity>
 
-        {/* Skip Option */}
-        <TouchableOpacity
-          style={styles.skipButton}
-          onPress={() => {
-            setSelectedCategories(CATEGORIES.map(c => c.id));
-          }}
-        >
-          <Text style={styles.skipButtonText}>Select All Categories</Text>
-        </TouchableOpacity>
+        {/* Reset Section */}
+        <View style={styles.resetSection}>
+          <TouchableOpacity
+            style={styles.resetButton}
+            onPress={resetPreferences}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="refresh-circle" size={20} color="#EF4444" />
+            <Text style={styles.resetButtonText}>Reset All Preferences</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* App Info */}
+        <View style={styles.appInfo}>
+          <Text style={styles.appName}>EuroNews</Text>
+          <Text style={styles.appVersion}>Version 1.0.0</Text>
+          <Text style={styles.appCopyright}>
+            Your gateway to European news
+          </Text>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -203,54 +245,45 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 24,
-    paddingBottom: 48,
+    padding: 20,
+    paddingBottom: 40,
   },
   header: {
     alignItems: 'center',
     marginBottom: 32,
-    marginTop: 16,
+    paddingTop: 16,
   },
-  logoContainer: {
+  profileIcon: {
     width: 80,
     height: 80,
-    borderRadius: 20,
+    borderRadius: 40,
     backgroundColor: '#1E293B',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
   },
-  title: {
-    fontSize: 32,
+  headerTitle: {
+    fontSize: 24,
     fontWeight: '700',
     color: '#F8FAFC',
-    marginBottom: 8,
+    marginBottom: 4,
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#94A3B8',
-  },
-  welcomeSection: {
-    marginBottom: 32,
-  },
-  welcomeTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#F8FAFC',
-    marginBottom: 8,
-  },
-  welcomeText: {
+  headerSubtitle: {
     fontSize: 15,
-    color: '#94A3B8',
-    lineHeight: 22,
+    color: '#64748B',
   },
-  categoriesSection: {
+  section: {
     marginBottom: 24,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: '#F8FAFC',
+    marginBottom: 6,
+  },
+  sectionDescription: {
+    fontSize: 14,
+    color: '#64748B',
     marginBottom: 16,
   },
   categoriesGrid: {
@@ -261,43 +294,48 @@ const styles = StyleSheet.create({
   categoryCard: {
     width: '48%',
     backgroundColor: '#1E293B',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 10,
     borderWidth: 2,
     borderColor: 'transparent',
     position: 'relative',
   },
   iconContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   categoryName: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
     color: '#E2E8F0',
   },
   checkmark: {
     position: 'absolute',
-    top: 12,
-    right: 12,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    top: 10,
+    right: 10,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  selectionInfo: {
-    textAlign: 'center',
+  summaryContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 20,
+  },
+  summaryText: {
     fontSize: 14,
     color: '#64748B',
-    marginBottom: 24,
   },
-  continueButton: {
+  saveButton: {
     backgroundColor: '#3B82F6',
     borderRadius: 14,
     paddingVertical: 16,
@@ -305,24 +343,53 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 8,
+    marginBottom: 16,
   },
-  continueButtonDisabled: {
+  saveButtonDisabled: {
     backgroundColor: '#475569',
     opacity: 0.6,
   },
-  continueButtonText: {
-    fontSize: 17,
+  saveButtonText: {
+    fontSize: 16,
     fontWeight: '600',
     color: '#fff',
   },
-  skipButton: {
-    marginTop: 16,
-    paddingVertical: 12,
+  resetSection: {
     alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 32,
   },
-  skipButtonText: {
+  resetButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  resetButtonText: {
     fontSize: 15,
-    color: '#3B82F6',
+    color: '#EF4444',
     fontWeight: '500',
+  },
+  appInfo: {
+    alignItems: 'center',
+    paddingTop: 24,
+    borderTopWidth: 1,
+    borderTopColor: '#1E293B',
+  },
+  appName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#3B82F6',
+    marginBottom: 4,
+  },
+  appVersion: {
+    fontSize: 13,
+    color: '#64748B',
+    marginBottom: 4,
+  },
+  appCopyright: {
+    fontSize: 12,
+    color: '#475569',
   },
 });
