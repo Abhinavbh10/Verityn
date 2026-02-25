@@ -251,7 +251,7 @@ export default function SearchScreen() {
         ) : (
           <View style={styles.initialContainer}>
             <Ionicons name="search" size={64} color="#334155" />
-            <Text style={styles.initialTitle}>Search European News</Text>
+            <Text style={styles.initialTitle}>Search Verityn</Text>
             <Text style={styles.initialText}>
               Enter a keyword to search through all news articles from European sources
             </Text>
