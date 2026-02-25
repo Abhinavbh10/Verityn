@@ -710,6 +710,18 @@ def main():
     print("7. Testing Error Handling...")
     test_invalid_category(test_result)
     
+    print("8. Testing Search Endpoint (Basic)...")
+    test_search_endpoint_basic(test_result)
+    
+    print("9. Testing Search Endpoint (With Limit)...")
+    test_search_endpoint_with_limit(test_result)
+    
+    print("10. Testing Search Endpoint (Validation)...")
+    test_search_endpoint_validation(test_result)
+    
+    print("11. Testing Search Endpoint (With Categories)...")
+    test_search_endpoint_with_categories(test_result)
+    
     # Print summary
     test_result.print_summary()
     
