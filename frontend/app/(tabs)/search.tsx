@@ -41,7 +41,7 @@ const CATEGORIES = [
 
 const API_BASE_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 
   process.env.EXPO_PUBLIC_BACKEND_URL || 
-  'https://euroews-rss.preview.emergentagent.com';
+  '';
 
 export default function SearchScreen() {
   const [query, setQuery] = useState('');

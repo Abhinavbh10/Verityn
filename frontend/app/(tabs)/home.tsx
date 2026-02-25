@@ -52,7 +52,7 @@ const CATEGORIES: Category[] = [
 
 const API_BASE_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 
   process.env.EXPO_PUBLIC_BACKEND_URL || 
-  'https://euroews-rss.preview.emergentagent.com';
+  '';
 
 export default function HomeScreen() {
   const [articles, setArticles] = useState<Article[]>([]);
