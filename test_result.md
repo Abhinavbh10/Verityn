@@ -263,11 +263,14 @@ test_plan:
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "GET /api/search?q=keyword searches across title and description, tested with curl"
+      - working: true
+        agent: "testing"
+        comment: "TESTED: Search endpoint fully verified. All 4 requested test scenarios pass: 1) GET /api/search?q=climate returns 3 articles with 'climate' content, 2) GET /api/search?q=AI&limit=5 returns max 5 AI articles, 3) GET /api/search?q=a returns 422 validation error for min 2 chars, 4) GET /api/search?q=technology&categories=business,science correctly filters by categories and returns 1 matching article. Response structure includes articles, total, query, and categories_searched fields."
 
 frontend:
   - task: "Welcome/Onboarding screen"
