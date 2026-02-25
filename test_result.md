@@ -111,11 +111,14 @@ backend:
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "GET /api/health returns healthy status"
+      - working: true
+        agent: "testing"
+        comment: "TESTED: Health endpoint verified - returns 200 with {status: healthy, service: European News RSS API}"
 
   - task: "Get categories endpoint"
     implemented: true
@@ -123,11 +126,14 @@ backend:
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "GET /api/categories returns all 7 categories with icons and colors"
+      - working: true
+        agent: "testing"
+        comment: "TESTED: Categories endpoint verified - returns exactly 7 categories (politics, business, technology, sports, entertainment, health, science) with proper structure (id, name, icon, color)"
 
   - task: "Get news by single category"
     implemented: true
@@ -135,11 +141,14 @@ backend:
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "GET /api/news/{category} fetches RSS feeds and returns articles"
+      - working: true
+        agent: "testing"
+        comment: "TESTED: Single category news verified for technology and politics - returns articles with correct structure (id, title, description, link, published, source, category, image_url). Technology returned 20 articles, Politics returned 20 articles. Category consistency verified."
 
   - task: "Get news from multiple categories"
     implemented: true
@@ -147,11 +156,14 @@ backend:
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "GET /api/news?categories=x,y returns merged articles from multiple categories"
+      - working: true
+        agent: "testing"
+        comment: "TESTED: Multiple categories news verified - GET /api/news?categories=technology,business&limit=5 returns correct response structure, respects limit (5 articles), returns correct categories list, and all articles belong to requested categories"
 
   - task: "RSS feed parsing"
     implemented: true
@@ -159,11 +171,26 @@ backend:
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Fetches from BBC, Guardian, DW, Euronews, Politico EU, Financial Times, Sky News, Wired UK, New Scientist"
+      - working: true
+        agent: "testing"
+        comment: "TESTED: RSS feed sources verified - GET /api/sources returns all expected European news sources grouped by category. Found 7 major sources: BBC, Guardian, DW, Euronews, Politico EU, Financial Times, Sky News. Minor: One Wired UK feed URL returns 404 but doesn't impact functionality"
+
+  - task: "API error handling"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "TESTED: Error handling verified - invalid category requests return proper 400 status code with error message"
 
 frontend:
   - task: "Welcome/Onboarding screen"
