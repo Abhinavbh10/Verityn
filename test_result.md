@@ -257,8 +257,130 @@ test_plan:
   test_all: true
   test_priority: "high_first"
 
+  - task: "Search news endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "GET /api/search?q=keyword searches across title and description, tested with curl"
+
+frontend:
+  - task: "Welcome/Onboarding screen"
+    implemented: true
+    working: true
+    file: "/app/frontend/app/index.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Category selection with checkmarks, Get Started button, Select All option"
+
+  - task: "Home news feed screen with bookmarks"
+    implemented: true
+    working: true
+    file: "/app/frontend/app/(tabs)/home.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Shows news cards with bookmark buttons, in-app browser for articles"
+
+  - task: "Search screen"
+    implemented: true
+    working: true
+    file: "/app/frontend/app/(tabs)/search.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Search input, popular suggestions, search results with bookmarks"
+
+  - task: "Bookmarks screen"
+    implemented: true
+    working: true
+    file: "/app/frontend/app/(tabs)/bookmarks.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Shows saved articles, remove individual or clear all"
+
+  - task: "Profile settings with notifications"
+    implemented: true
+    working: true
+    file: "/app/frontend/app/(tabs)/profile.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Category editing, notification toggles, daily digest option"
+
+  - task: "Bookmark utility functions"
+    implemented: true
+    working: true
+    file: "/app/frontend/app/utils/bookmarks.ts"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "AsyncStorage based bookmarking - add, remove, get, isBookmarked"
+
+  - task: "Notification utility functions"
+    implemented: true
+    working: true
+    file: "/app/frontend/app/utils/notifications.ts"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "expo-notifications integration, permission request, daily digest scheduling"
+
+  - task: "In-app browser for articles"
+    implemented: true
+    working: true
+    file: "/app/frontend/app/(tabs)/home.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "expo-web-browser opens articles in-app instead of external browser"
+
+metadata:
+  created_by: "main_agent"
+  version: "1.1"
+  test_sequence: 2
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Search news endpoint"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
 agent_communication:
   - agent: "main"
-    message: "Implemented complete European news RSS app with backend API for fetching news from multiple European sources (BBC, Guardian, DW, Euronews, Politico EU, Financial Times, Sky News, etc.) and Expo frontend with welcome screen, home feed, and profile settings. Backend tested manually with curl - all endpoints working. Please verify all backend endpoints."
+    message: "Added new features: 1) Search functionality with backend endpoint and frontend screen, 2) Bookmarking system with AsyncStorage persistence, 3) In-app browser using expo-web-browser, 4) Notifications with push notification toggle and daily digest option. Please test the new search endpoint GET /api/search?q=keyword"
   - agent: "testing"
     message: "BACKEND TESTING COMPLETE: All 17 backend tests passed (100% success rate). Verified all endpoints: health check, categories (7 expected categories), single category news (technology & politics), multiple categories news with limit, RSS feed sources (7 major European sources), and error handling. Backend is fully functional. Minor issue: One Wired UK RSS feed returns 404 but doesn't impact core functionality. Ready for production."
