@@ -75,9 +75,8 @@ export default function HomeScreen() {
 
   const loadPreferencesAndFetch = async () => {
     try {
-      const stored = await AsyncStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const preferences = JSON.parse(stored);
+      const preferences = await getPreferences();
+      if (preferences) {
         setSelectedCategories(preferences.categories || []);
         await fetchNews(preferences.categories || []);
       }
