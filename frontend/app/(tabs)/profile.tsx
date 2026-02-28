@@ -11,7 +11,6 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import {
@@ -20,6 +19,7 @@ import {
   saveNotificationSettings,
   NotificationSettings,
 } from '../../src/utils/notifications';
+import { getPreferences, savePreferences, clearPreferences } from '../../src/utils/storage';
 
 const STORAGE_KEY = '@user_preferences';
 
