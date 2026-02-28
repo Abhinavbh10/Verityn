@@ -1,6 +1,6 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
-const BOOKMARKS_KEY = '@bookmarked_articles';
+const BOOKMARKS_KEY = 'verityn_bookmarked_articles';
 
 export interface BookmarkedArticle {
   id: string;
@@ -16,7 +16,7 @@ export interface BookmarkedArticle {
 
 export const getBookmarks = async (): Promise<BookmarkedArticle[]> => {
   try {
-    const stored = await AsyncStorage.getItem(BOOKMARKS_KEY);
+    const stored = await SecureStore.getItemAsync(BOOKMARKS_KEY);
     if (stored) {
       return JSON.parse(stored);
     }
@@ -38,7 +38,7 @@ export const addBookmark = async (article: Omit<BookmarkedArticle, 'bookmarkedAt
     };
     
     bookmarks.unshift(newBookmark);
-    await AsyncStorage.setItem(BOOKMARKS_KEY, JSON.stringify(bookmarks));
+    await SecureStore.setItemAsync(BOOKMARKS_KEY, JSON.stringify(bookmarks));
     return true;
   } catch (error) {
     console.error('Error adding bookmark:', error);
@@ -50,7 +50,7 @@ export const removeBookmark = async (articleId: string): Promise<boolean> => {
   try {
     const bookmarks = await getBookmarks();
     const filtered = bookmarks.filter(b => b.id !== articleId);
-    await AsyncStorage.setItem(BOOKMARKS_KEY, JSON.stringify(filtered));
+    await SecureStore.setItemAsync(BOOKMARKS_KEY, JSON.stringify(filtered));
     return true;
   } catch (error) {
     console.error('Error removing bookmark:', error);
@@ -70,7 +70,7 @@ export const isBookmarked = async (articleId: string): Promise<boolean> => {
 
 export const clearAllBookmarks = async (): Promise<boolean> => {
   try {
-    await AsyncStorage.removeItem(BOOKMARKS_KEY);
+    await SecureStore.deleteItemAsync(BOOKMARKS_KEY);
     return true;
   } catch (error) {
     console.error('Error clearing bookmarks:', error);

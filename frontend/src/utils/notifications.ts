@@ -1,8 +1,8 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
-const NOTIFICATION_SETTINGS_KEY = '@notification_settings';
+const NOTIFICATION_SETTINGS_KEY = 'verityn_notification_settings';
 
 export interface NotificationSettings {
   enabled: boolean;
@@ -62,7 +62,7 @@ export const requestNotificationPermissions = async (): Promise<boolean> => {
 
 export const getNotificationSettings = async (): Promise<NotificationSettings> => {
   try {
-    const stored = await AsyncStorage.getItem(NOTIFICATION_SETTINGS_KEY);
+    const stored = await SecureStore.getItemAsync(NOTIFICATION_SETTINGS_KEY);
     if (stored) {
       return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
     }
@@ -74,7 +74,7 @@ export const getNotificationSettings = async (): Promise<NotificationSettings> =
 
 export const saveNotificationSettings = async (settings: NotificationSettings): Promise<boolean> => {
   try {
-    await AsyncStorage.setItem(NOTIFICATION_SETTINGS_KEY, JSON.stringify(settings));
+    await SecureStore.setItemAsync(NOTIFICATION_SETTINGS_KEY, JSON.stringify(settings));
     
     // Cancel existing scheduled notifications
     await Notifications.cancelAllScheduledNotificationsAsync();
@@ -96,7 +96,7 @@ export const scheduleDailyDigest = async (hour: number, minute: number): Promise
   try {
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: 'EuroNews Daily Digest',
+        title: 'Verityn Daily Digest',
         body: 'Check out the latest news from Europe!',
         data: { type: 'daily_digest' },
       },
