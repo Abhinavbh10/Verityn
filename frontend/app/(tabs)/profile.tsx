@@ -21,8 +21,6 @@ import {
 } from '../../src/utils/notifications';
 import { getPreferences, savePreferences, clearPreferences } from '../../src/utils/storage';
 
-const STORAGE_KEY = '@user_preferences';
-
 interface Category {
   id: string;
   name: string;
