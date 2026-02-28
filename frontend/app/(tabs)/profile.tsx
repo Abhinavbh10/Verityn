@@ -89,7 +89,7 @@ export default function ProfileScreen() {
     return !selectedCategories.every(cat => originalCategories.includes(cat));
   };
 
-  const savePreferences = async () => {
+  const handleSavePreferences = async () => {
     if (selectedCategories.length === 0) {
       Alert.alert('Error', 'Please select at least one category');
       return;
@@ -97,10 +97,7 @@ export default function ProfileScreen() {
 
     setSaving(true);
     try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({
-        categories: selectedCategories,
-        updatedAt: new Date().toISOString(),
-      }));
+      await savePreferences(selectedCategories);
       setOriginalCategories(selectedCategories);
       Alert.alert('Success', 'Your preferences have been saved!');
     } catch (error) {
