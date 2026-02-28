@@ -20,8 +20,6 @@ import Svg, { Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg'
 import { addBookmark, removeBookmark, getBookmarks } from '../../src/utils/bookmarks';
 import { getPreferences } from '../../src/utils/storage';
 
-const STORAGE_KEY = '@user_preferences';
-
 interface Article {
   id: string;
   title: string;
