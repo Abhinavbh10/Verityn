@@ -12,13 +12,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { format, parseISO, isValid } from 'date-fns';
 import * as WebBrowser from 'expo-web-browser';
 import Constants from 'expo-constants';
 import Svg, { Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { addBookmark, removeBookmark, getBookmarks } from '../../src/utils/bookmarks';
+import { getPreferences } from '../../src/utils/storage';
 
 const STORAGE_KEY = '@user_preferences';
 
