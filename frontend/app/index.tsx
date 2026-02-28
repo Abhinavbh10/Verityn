@@ -4,9 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { getPreferences, savePreferences } from '../src/utils/storage';
-
-const STORAGE_KEY = '@user_preferences';
+import { getPreferences, savePreferences as savePrefs } from '../src/utils/storage';
 
 interface Category {
   id: string;
@@ -36,14 +34,11 @@ export default function WelcomeScreen() {
 
   const checkExistingPreferences = async () => {
     try {
-      const stored = await AsyncStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const preferences = JSON.parse(stored);
-        if (preferences.categories && preferences.categories.length > 0) {
-          // User has preferences, redirect to home
-          router.replace('/(tabs)/home');
-          return;
-        }
+      const preferences = await getPreferences();
+      if (preferences && preferences.categories && preferences.categories.length > 0) {
+        // User has preferences, redirect to home
+        router.replace('/(tabs)/home');
+        return;
       }
     } catch (error) {
       console.error('Error checking preferences:', error);
@@ -61,17 +56,14 @@ export default function WelcomeScreen() {
     });
   };
 
-  const savePreferences = async () => {
+  const handleSavePreferences = async () => {
     if (selectedCategories.length === 0) {
       return;
     }
 
     setLoading(true);
     try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({
-        categories: selectedCategories,
-        updatedAt: new Date().toISOString(),
-      }));
+      await savePrefs(selectedCategories);
       router.replace('/(tabs)/home');
     } catch (error) {
       console.error('Error saving preferences:', error);
@@ -175,7 +167,7 @@ export default function WelcomeScreen() {
             styles.continueButton,
             selectedCategories.length === 0 && styles.continueButtonDisabled
           ]}
-          onPress={savePreferences}
+          onPress={handleSavePreferences}
           disabled={selectedCategories.length === 0 || loading}
           activeOpacity={0.8}
         >
