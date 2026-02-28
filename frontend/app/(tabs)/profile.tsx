@@ -140,7 +140,7 @@ export default function ProfileScreen() {
           text: 'Reset',
           style: 'destructive',
           onPress: async () => {
-            await AsyncStorage.removeItem(STORAGE_KEY);
+            await clearPreferences();
             router.replace('/');
           },
         },
