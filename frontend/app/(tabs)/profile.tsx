@@ -274,7 +274,7 @@ export default function ProfileScreen() {
             styles.saveButton,
             (!hasChanges() || selectedCategories.length === 0) && styles.saveButtonDisabled
           ]}
-          onPress={savePreferences}
+          onPress={handleSavePreferences}
           disabled={!hasChanges() || selectedCategories.length === 0 || saving}
           activeOpacity={0.8}
         >
