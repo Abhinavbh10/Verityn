@@ -59,9 +59,8 @@ export default function ProfileScreen() {
 
   const loadPreferences = async () => {
     try {
-      const stored = await AsyncStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const preferences = JSON.parse(stored);
+      const preferences = await getPreferences();
+      if (preferences) {
         setSelectedCategories(preferences.categories || []);
         setOriginalCategories(preferences.categories || []);
       }
