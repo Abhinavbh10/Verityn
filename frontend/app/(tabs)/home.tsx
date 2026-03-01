@@ -562,29 +562,6 @@ const styles = StyleSheet.create({
     color: '#2563EB',
     fontWeight: '500',
   },
-  contextText: {
-    fontSize: 14,
-    color: '#6B7280',
-    lineHeight: 22,
-    fontStyle: 'italic',
-  },
-  readMoreButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#2563EB',
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    marginTop: 16,
-    marginBottom: 12,
-    gap: 8,
-  },
-  readMoreButtonText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '600',
-  },
   
   // Footer
   inshortsFooter: {
