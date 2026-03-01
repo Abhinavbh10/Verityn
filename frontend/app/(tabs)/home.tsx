@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, RefreshControl,
-  ActivityIndicator, ScrollView, Image, Platform, Dimensions,
-  FlatList, Share, StatusBar,
+  ActivityIndicator, ScrollView, Image, Dimensions,
+  FlatList, Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
@@ -10,7 +10,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { format, parseISO, isValid, formatDistanceToNow } from 'date-fns';
 import * as WebBrowser from 'expo-web-browser';
 import Constants from 'expo-constants';
-import Svg, { Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { addBookmark, removeBookmark, getBookmarks } from '../../src/utils/bookmarks';
 import { getPreferences } from '../../src/utils/storage';
 
