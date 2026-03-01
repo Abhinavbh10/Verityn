@@ -176,7 +176,7 @@ export default function ForYouScreen() {
         <View style={styles.keywordsSection}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.keywordsContainer}>
             <TouchableOpacity style={[styles.keywordChip, activeKeyword === 'all' && styles.keywordChipActive]} onPress={() => setActiveKeyword('all')}>
-              <Text style={[styles.keywordChipText, activeKeyword === 'all' && styles.keywordChipTextActive]}>All ({articles.length})</Text>
+              <Text style={[styles.keywordChipText, activeKeyword === 'all' && styles.keywordChipTextActive]}>All ({articlesWithImages.length})</Text>
             </TouchableOpacity>
             {keywords.map((keyword) => (
               <View key={keyword} style={styles.keywordChipWrapper}>
