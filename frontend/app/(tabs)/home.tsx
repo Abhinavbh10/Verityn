@@ -287,34 +287,8 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Svg width={28} height={28} viewBox="0 0 100 100">
-            <Defs><LinearGradient id="headerLogo" x1="0%" y1="0%" x2="100%" y2="100%"><Stop offset="0%" stopColor="#2563EB" /><Stop offset="100%" stopColor="#1D4ED8" /></LinearGradient></Defs>
-            <Circle cx="50" cy="50" r="45" fill="none" stroke="url(#headerLogo)" strokeWidth="4" />
-            <Path d="M30 35 L50 70 L70 35" fill="none" stroke="url(#headerLogo)" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
-          </Svg>
-          <Text style={styles.headerTitle}>Verityn</Text>
-        </View>
-        <View style={styles.headerRight}>
-          {/* View Mode Toggle */}
-          <View style={styles.viewToggle}>
-            <TouchableOpacity 
-              style={[styles.viewToggleButton, viewMode === 'cards' && styles.viewToggleButtonActive]} 
-              onPress={() => setViewMode('cards')}
-            >
-              <Ionicons name="albums" size={18} color={viewMode === 'cards' ? '#fff' : '#64748B'} />
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.viewToggleButton, viewMode === 'list' && styles.viewToggleButtonActive]} 
-              onPress={() => setViewMode('list')}
-            >
-              <Ionicons name="list" size={18} color={viewMode === 'list' ? '#fff' : '#64748B'} />
-            </TouchableOpacity>
-          </View>
-          <TouchableOpacity onPress={onRefresh} style={styles.refreshButton}>
-            <Ionicons name="refresh" size={20} color="#2563EB" />
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.headerTitle}>Verityn</Text>
+        <Text style={styles.headerSubtitle}>European News</Text>
       </View>
 
       {/* Category Tabs */}
