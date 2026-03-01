@@ -558,6 +558,10 @@ const styles = StyleSheet.create({
     lineHeight: 26,
     marginBottom: 12,
   },
+  readMoreLink: {
+    color: '#2563EB',
+    fontWeight: '500',
+  },
   contextText: {
     fontSize: 14,
     color: '#6B7280',
