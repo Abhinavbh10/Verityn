@@ -466,7 +466,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   imageContainer: {
-    height: CARD_HEIGHT * 0.4,
+    height: CARD_HEIGHT * 0.32,
     position: 'relative',
   },
   inshortsImage: { 
@@ -477,7 +477,6 @@ const styles = StyleSheet.create({
   imagePlaceholder: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#1F2937',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -490,8 +489,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-end',
     padding: 12,
-    paddingBottom: 16,
-    background: 'linear-gradient(transparent, rgba(0,0,0,0.6))',
+    paddingBottom: 14,
+    backgroundColor: 'rgba(0,0,0,0.3)',
   },
   sourceBadge: {
     flexDirection: 'row',
@@ -509,12 +508,12 @@ const styles = StyleSheet.create({
   },
   imageActions: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
   },
   imageActionBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -523,24 +522,74 @@ const styles = StyleSheet.create({
   // Content Section
   contentSection: {
     flex: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 8,
   },
-  inshortsTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#111827',
-    lineHeight: 30,
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 12,
   },
-  descriptionScroll: {
+  categoryTag: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 6,
+  },
+  categoryTagText: {
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  readingTime: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  readingTimeText: {
+    fontSize: 12,
+    color: '#9CA3AF',
+  },
+  inshortsTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111827',
+    lineHeight: 28,
+    marginBottom: 14,
+  },
+  descriptionContainer: {
     flex: 1,
   },
   inshortsDescription: {
     fontSize: 16,
     color: '#374151',
     lineHeight: 26,
+    marginBottom: 12,
+  },
+  contextText: {
+    fontSize: 14,
+    color: '#6B7280',
+    lineHeight: 22,
+    fontStyle: 'italic',
+  },
+  readMoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#2563EB',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    marginTop: 16,
+    marginBottom: 12,
+    gap: 8,
+  },
+  readMoreButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
   },
   
   // Footer
@@ -548,48 +597,52 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 12,
+    paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: '#F1F5F9',
+  },
+  footerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  footerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   footerText: {
     fontSize: 12,
     color: '#9CA3AF',
   },
-  readMoreBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  readMoreText: {
-    fontSize: 13,
-    color: '#2563EB',
-    fontWeight: '600',
+  footerSource: {
+    fontSize: 12,
+    color: '#6B7280',
+    fontWeight: '500',
   },
   
   // Swipe Indicator
   swipeIndicator: {
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 6,
   },
   swipeText: {
-    fontSize: 11,
-    color: '#9CA3AF',
+    fontSize: 10,
+    color: '#CBD5E1',
   },
   
   // Progress Bar
   progressBar: {
     position: 'absolute',
-    bottom: 16,
+    bottom: 12,
     right: 16,
     backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
   },
   progressText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
   },
   
