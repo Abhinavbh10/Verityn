@@ -215,11 +215,6 @@ export default function HomeScreen() {
           {/* Description - Full display */}
           <View style={styles.descriptionContainer}>
             <Text style={styles.inshortsDescription}>{item.description}</Text>
-            
-            {/* Additional context line */}
-            <Text style={styles.contextText}>
-              Tap below to read the complete story and get more details on this developing news.
-            </Text>
           </View>
 
           {/* Read More Button */}
