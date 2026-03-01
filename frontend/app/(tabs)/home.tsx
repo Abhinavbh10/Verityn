@@ -142,10 +142,15 @@ export default function HomeScreen() {
   const renderInshortsCard = ({ item, index }: { item: Article; index: number }) => {
     const isBookmarked = bookmarkedIds.has(item.id);
     const timeAgo = getTimeAgo(item.published);
+    const categoryColor = getCategoryColor(item.category);
+    
+    // Calculate reading time (avg 200 words per minute)
+    const wordCount = (item.title + ' ' + item.description).split(/\s+/).length;
+    const readingTime = Math.max(1, Math.ceil(wordCount / 200));
 
     return (
       <View style={styles.inshortsCard}>
-        {/* Image Section */}
+        {/* Image Section - Reduced height */}
         <TouchableOpacity 
           style={styles.imageContainer}
           onPress={() => openArticle(item.link)}
@@ -158,8 +163,8 @@ export default function HomeScreen() {
               resizeMode="cover" 
             />
           ) : (
-            <View style={styles.imagePlaceholder}>
-              <Ionicons name="newspaper" size={60} color="#374151" />
+            <View style={[styles.imagePlaceholder, { backgroundColor: `${categoryColor}15` }]}>
+              <Ionicons name="newspaper" size={50} color={categoryColor} />
             </View>
           )}
           
@@ -191,36 +196,58 @@ export default function HomeScreen() {
           </View>
         </TouchableOpacity>
 
-        {/* Content Section */}
+        {/* Content Section - Expanded */}
         <View style={styles.contentSection}>
+          {/* Category & Reading Time */}
+          <View style={styles.metaRow}>
+            <View style={[styles.categoryTag, { backgroundColor: `${categoryColor}15` }]}>
+              <Text style={[styles.categoryTagText, { color: categoryColor }]}>{item.category}</Text>
+            </View>
+            <View style={styles.readingTime}>
+              <Ionicons name="time-outline" size={14} color="#9CA3AF" />
+              <Text style={styles.readingTimeText}>{readingTime} min read</Text>
+            </View>
+          </View>
+
+          {/* Title */}
           <Text style={styles.inshortsTitle}>{item.title}</Text>
           
-          <ScrollView 
-            style={styles.descriptionScroll}
-            showsVerticalScrollIndicator={false}
-          >
+          {/* Description - Full display */}
+          <View style={styles.descriptionContainer}>
             <Text style={styles.inshortsDescription}>{item.description}</Text>
-          </ScrollView>
+            
+            {/* Additional context line */}
+            <Text style={styles.contextText}>
+              Tap below to read the complete story and get more details on this developing news.
+            </Text>
+          </View>
+
+          {/* Read More Button */}
+          <TouchableOpacity 
+            style={styles.readMoreButton}
+            onPress={() => openArticle(item.link)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.readMoreButtonText}>Read Full Story</Text>
+            <Ionicons name="arrow-forward" size={18} color="#fff" />
+          </TouchableOpacity>
 
           {/* Footer */}
           <View style={styles.inshortsFooter}>
-            <Text style={styles.footerText}>
-              {timeAgo} ago • {item.source}
-            </Text>
-            <TouchableOpacity 
-              style={styles.readMoreBtn}
-              onPress={() => openArticle(item.link)}
-            >
-              <Text style={styles.readMoreText}>Read full article</Text>
-              <Ionicons name="arrow-forward" size={14} color="#2563EB" />
-            </TouchableOpacity>
+            <View style={styles.footerLeft}>
+              <Ionicons name="time-outline" size={14} color="#9CA3AF" />
+              <Text style={styles.footerText}>{timeAgo} ago</Text>
+            </View>
+            <View style={styles.footerRight}>
+              <Text style={styles.footerSource}>{item.source}</Text>
+            </View>
           </View>
         </View>
 
         {/* Swipe Indicator */}
         {index < filteredArticles.length - 1 && (
           <View style={styles.swipeIndicator}>
-            <Ionicons name="chevron-up" size={20} color="#9CA3AF" />
+            <Ionicons name="chevron-up" size={18} color="#CBD5E1" />
             <Text style={styles.swipeText}>Swipe up for next</Text>
           </View>
         )}
