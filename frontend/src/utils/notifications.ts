@@ -1,6 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
+import { secureStorage } from './secureStorage';
 
 const NOTIFICATION_SETTINGS_KEY = 'verityn_notification_settings';
 
@@ -31,6 +31,11 @@ Notifications.setNotificationHandler({
 
 export const requestNotificationPermissions = async (): Promise<boolean> => {
   try {
+    // On web, notifications may not be fully supported
+    if (Platform.OS === 'web') {
+      return false;
+    }
+    
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
     
@@ -62,7 +67,7 @@ export const requestNotificationPermissions = async (): Promise<boolean> => {
 
 export const getNotificationSettings = async (): Promise<NotificationSettings> => {
   try {
-    const stored = await SecureStore.getItemAsync(NOTIFICATION_SETTINGS_KEY);
+    const stored = await secureStorage.getItem(NOTIFICATION_SETTINGS_KEY);
     if (stored) {
       return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
     }
@@ -74,7 +79,12 @@ export const getNotificationSettings = async (): Promise<NotificationSettings> =
 
 export const saveNotificationSettings = async (settings: NotificationSettings): Promise<boolean> => {
   try {
-    await SecureStore.setItemAsync(NOTIFICATION_SETTINGS_KEY, JSON.stringify(settings));
+    await secureStorage.setItem(NOTIFICATION_SETTINGS_KEY, JSON.stringify(settings));
+    
+    // Skip scheduling on web
+    if (Platform.OS === 'web') {
+      return true;
+    }
     
     // Cancel existing scheduled notifications
     await Notifications.cancelAllScheduledNotificationsAsync();
@@ -94,6 +104,11 @@ export const saveNotificationSettings = async (settings: NotificationSettings): 
 
 export const scheduleDailyDigest = async (hour: number, minute: number): Promise<void> => {
   try {
+    // Skip on web
+    if (Platform.OS === 'web') {
+      return;
+    }
+    
     await Notifications.scheduleNotificationAsync({
       content: {
         title: 'Verityn Daily Digest',
@@ -113,6 +128,11 @@ export const scheduleDailyDigest = async (hour: number, minute: number): Promise
 
 export const sendLocalNotification = async (title: string, body: string, data?: any): Promise<void> => {
   try {
+    // Skip on web
+    if (Platform.OS === 'web') {
+      return;
+    }
+    
     await Notifications.scheduleNotificationAsync({
       content: {
         title,
