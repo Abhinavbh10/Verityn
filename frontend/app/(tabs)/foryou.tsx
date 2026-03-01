@@ -50,11 +50,15 @@ export default function ForYouScreen() {
       const allArticles: Article[] = []; const seenIds = new Set<string>();
       for (const keyword of keywordList.slice(0, 5)) {
         try {
-          const response = await fetch(`${API_BASE_URL}/api/search?q=${encodeURIComponent(keyword)}&limit=15`);
+          const response = await fetch(`${API_BASE_URL}/api/search?q=${encodeURIComponent(keyword)}&limit=20`);
           if (response.ok) {
             const data = await response.json();
             for (const article of data.articles || []) {
-              if (!seenIds.has(article.id)) { seenIds.add(article.id); allArticles.push(article); }
+              // Only include articles that have images
+              if (!seenIds.has(article.id) && article.image_url) { 
+                seenIds.add(article.id); 
+                allArticles.push(article); 
+              }
             }
           }
         } catch (err) { console.error(`Error fetching for keyword ${keyword}:`, err); }
