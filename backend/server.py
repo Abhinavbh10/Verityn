@@ -126,6 +126,67 @@ def extract_image_from_entry(entry) -> Optional[str]:
     
     return None
 
+async def scrape_article_content(url: str) -> Optional[str]:
+    """Scrape article content from the URL to get fuller description"""
+    try:
+        async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+            response = await client.get(url, headers={
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            })
+            response.raise_for_status()
+            
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # Remove unwanted elements
+        for element in soup(['script', 'style', 'nav', 'header', 'footer', 'aside', 'form', 'iframe']):
+            element.decompose()
+        
+        # Try to find article content using common selectors
+        content = None
+        
+        # Try article tag first
+        article = soup.find('article')
+        if article:
+            paragraphs = article.find_all('p')
+            if paragraphs:
+                content = ' '.join([p.get_text(strip=True) for p in paragraphs[:5]])
+        
+        # Try common content class names
+        if not content or len(content) < 100:
+            for selector in ['.article-body', '.story-body', '.post-content', '.entry-content', 
+                           '.article__body', '.ssrcss-11r1m41-RichTextComponentWrapper', 
+                           '[data-component="text-block"]', '.article-text']:
+                body = soup.select_one(selector)
+                if body:
+                    paragraphs = body.find_all('p')
+                    if paragraphs:
+                        content = ' '.join([p.get_text(strip=True) for p in paragraphs[:5]])
+                        break
+        
+        # Fallback: get main paragraphs
+        if not content or len(content) < 100:
+            main = soup.find('main') or soup.find('body')
+            if main:
+                paragraphs = main.find_all('p')
+                # Filter out short paragraphs (likely navigation, etc)
+                good_paragraphs = [p.get_text(strip=True) for p in paragraphs if len(p.get_text(strip=True)) > 50]
+                content = ' '.join(good_paragraphs[:5])
+        
+        if content:
+            # Clean up the content
+            content = re.sub(r'\s+', ' ', content).strip()
+            # Limit to reasonable length (500 chars)
+            if len(content) > 500:
+                # Try to cut at sentence boundary
+                sentences = content[:550].split('. ')
+                content = '. '.join(sentences[:-1]) + '.' if len(sentences) > 1 else content[:500] + '...'
+            return content
+            
+    except Exception as e:
+        print(f"Error scraping {url}: {str(e)}")
+    
+    return None
+
 async def fetch_rss_feed(url: str, source: str, category: str) -> List[NewsArticle]:
     """Fetch and parse a single RSS feed"""
     articles = []
