@@ -1,4 +1,4 @@
-import * as SecureStore from 'expo-secure-store';
+import { secureStorage } from './secureStorage';
 
 const STORAGE_KEY = 'verityn_user_preferences';
 
@@ -9,7 +9,7 @@ export interface UserPreferences {
 
 export const getPreferences = async (): Promise<UserPreferences | null> => {
   try {
-    const stored = await SecureStore.getItemAsync(STORAGE_KEY);
+    const stored = await secureStorage.getItem(STORAGE_KEY);
     if (stored) {
       return JSON.parse(stored);
     }
@@ -25,7 +25,7 @@ export const savePreferences = async (categories: string[]): Promise<boolean> =>
       categories,
       updatedAt: new Date().toISOString(),
     };
-    await SecureStore.setItemAsync(STORAGE_KEY, JSON.stringify(preferences));
+    await secureStorage.setItem(STORAGE_KEY, JSON.stringify(preferences));
     return true;
   } catch (error) {
     console.error('Error saving preferences:', error);
@@ -35,7 +35,7 @@ export const savePreferences = async (categories: string[]): Promise<boolean> =>
 
 export const clearPreferences = async (): Promise<boolean> => {
   try {
-    await SecureStore.deleteItemAsync(STORAGE_KEY);
+    await secureStorage.deleteItem(STORAGE_KEY);
     return true;
   } catch (error) {
     console.error('Error clearing preferences:', error);
