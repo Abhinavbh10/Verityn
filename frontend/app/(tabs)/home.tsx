@@ -214,18 +214,13 @@ export default function HomeScreen() {
           
           {/* Description - Full display */}
           <View style={styles.descriptionContainer}>
-            <Text style={styles.inshortsDescription}>{item.description}</Text>
+            <Text style={styles.inshortsDescription}>
+              {item.description}
+              <Text style={styles.readMoreLink} onPress={() => openArticle(item.link)}>
+                {' '}Read more →
+              </Text>
+            </Text>
           </View>
-
-          {/* Read More Button */}
-          <TouchableOpacity 
-            style={styles.readMoreButton}
-            onPress={() => openArticle(item.link)}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.readMoreButtonText}>Read Full Story</Text>
-            <Ionicons name="arrow-forward" size={18} color="#fff" />
-          </TouchableOpacity>
 
           {/* Footer */}
           <View style={styles.inshortsFooter}>
