@@ -199,6 +199,8 @@ async def fetch_rss_feed(url: str, source: str, category: str) -> List[NewsArtic
             
         feed = feedparser.parse(response.text)
         
+        # Collect entries for processing
+        entries_data = []
         for entry in feed.entries[:10]:  # Limit to 10 articles per feed
             title = entry.get('title', 'No Title')
             link = entry.get('link', '')
@@ -206,9 +208,8 @@ async def fetch_rss_feed(url: str, source: str, category: str) -> List[NewsArtic
             
             # Clean description (remove HTML tags)
             if description:
-                import re
                 description = re.sub(r'<[^>]+>', '', description)
-                description = description[:300] + '...' if len(description) > 300 else description
+                description = description.strip()
             
             # Parse published date
             published = entry.get('published', entry.get('updated', ''))
@@ -220,15 +221,51 @@ async def fetch_rss_feed(url: str, source: str, category: str) -> List[NewsArtic
             
             image_url = extract_image_from_entry(entry)
             
+            entries_data.append({
+                'title': title,
+                'link': link,
+                'description': description,
+                'published': published,
+                'image_url': image_url,
+                'needs_scraping': len(description) < MIN_DESCRIPTION_LENGTH
+            })
+        
+        # Scrape content for articles with short descriptions (limit to 3 per feed to avoid slowdown)
+        scrape_tasks = []
+        scrape_indices = []
+        for i, entry in enumerate(entries_data):
+            if entry['needs_scraping'] and len(scrape_tasks) < 3:
+                scrape_tasks.append(scrape_article_content(entry['link']))
+                scrape_indices.append(i)
+        
+        if scrape_tasks:
+            scraped_contents = await asyncio.gather(*scrape_tasks, return_exceptions=True)
+            for idx, content in zip(scrape_indices, scraped_contents):
+                if content and not isinstance(content, Exception):
+                    entries_data[idx]['description'] = content
+        
+        # Create articles
+        for entry in entries_data:
+            # Ensure description has minimum length with padding if needed
+            description = entry['description']
+            if len(description) < MIN_DESCRIPTION_LENGTH:
+                # Pad with a call-to-action
+                description = description + " Read the full article for more details and comprehensive coverage of this developing story."
+            
+            # Limit to 500 chars
+            if len(description) > 500:
+                sentences = description[:520].split('. ')
+                description = '. '.join(sentences[:-1]) + '.' if len(sentences) > 1 else description[:500] + '...'
+            
             article = NewsArticle(
-                id=generate_article_id(title, link),
-                title=title,
+                id=generate_article_id(entry['title'], entry['link']),
+                title=entry['title'],
                 description=description,
-                link=link,
-                published=published,
+                link=entry['link'],
+                published=entry['published'],
                 source=source,
                 category=category,
-                image_url=image_url
+                image_url=entry['image_url']
             )
             articles.append(article)
             
