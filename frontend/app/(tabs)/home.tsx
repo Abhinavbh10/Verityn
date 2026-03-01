@@ -468,7 +468,7 @@ const styles = StyleSheet.create({
   carouselSource: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   carouselSourceText: { fontSize: 13, color: '#64748B' },
   
-  carouselActions: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', backgroundColor: '#F8FAFC', paddingVertical: 16, borderBottomLeftRadius: 16, borderBottomRightRadius: 16, borderWidth: 1, borderTopWidth: 0, borderColor: '#F1F5F9' },
+  carouselActions: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', backgroundColor: '#F8FAFC', paddingVertical: 14, borderBottomLeftRadius: 16, borderBottomRightRadius: 16, borderWidth: 1, borderTopWidth: 0, borderColor: '#E2E8F0' },
   actionButton: { alignItems: 'center', gap: 4, minWidth: 70 },
   actionButtonActive: {},
   readButton: {},
