@@ -9,15 +9,17 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#1E293B',
-          borderTopColor: '#334155',
+          backgroundColor: '#FFFFFF',
+          borderTopColor: '#E5E7EB',
           borderTopWidth: 1,
           height: Platform.OS === 'ios' ? 88 : 64,
           paddingBottom: Platform.OS === 'ios' ? 28 : 8,
           paddingTop: 8,
+          elevation: 0,
+          shadowOpacity: 0,
         },
-        tabBarActiveTintColor: '#3B82F6',
-        tabBarInactiveTintColor: '#64748B',
+        tabBarActiveTintColor: '#2563EB',
+        tabBarInactiveTintColor: '#9CA3AF',
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
@@ -40,7 +42,6 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="sparkles" size={size} color={color} />
           ),
-          tabBarActiveTintColor: '#8B5CF6',
         }}
       />
       <Tabs.Screen
