@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, RefreshControl,
   ActivityIndicator, ScrollView, Image, Platform, Dimensions,
-  FlatList, Animated, Share,
+  FlatList, Share, StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
@@ -15,6 +15,7 @@ import { addBookmark, removeBookmark, getBookmarks } from '../../src/utils/bookm
 import { getPreferences } from '../../src/utils/storage';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const CARD_HEIGHT = SCREEN_HEIGHT - 180; // Account for header, tabs, and bottom bar
 
 interface Article {
   id: string; title: string; description: string; link: string;
@@ -43,7 +44,7 @@ export default function HomeScreen() {
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const [error, setError] = useState<string | null>(null);
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
-  const [viewMode, setViewMode] = useState<'list' | 'carousel'>('carousel');
+  const [viewMode, setViewMode] = useState<'list' | 'cards'>('cards');
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
@@ -93,18 +94,17 @@ export default function HomeScreen() {
   const getTimeAgo = (dateString: string) => {
     try { 
       const date = parseISO(dateString); 
-      if (isValid(date)) return formatDistanceToNow(date, { addSuffix: true }); 
+      if (isValid(date)) return formatDistanceToNow(date, { addSuffix: false }); 
     }
-    catch {} return dateString;
+    catch {} return '';
   };
 
   const getCategoryColor = (categoryId: string) => CATEGORIES.find(c => c.id === categoryId.toLowerCase())?.color || '#64748B';
-  const getCategoryIcon = (categoryId: string) => CATEGORIES.find(c => c.id === categoryId.toLowerCase())?.icon || 'newspaper';
 
   const filteredArticles = activeFilter === 'all' ? articles : articles.filter(a => a.category.toLowerCase() === activeFilter);
 
   const openArticle = async (url: string) => {
-    try { await WebBrowser.openBrowserAsync(url, { toolbarColor: '#FFFFFF', controlsColor: '#2563EB' }); }
+    try { await WebBrowser.openBrowserAsync(url, { toolbarColor: '#000000', controlsColor: '#2563EB' }); }
     catch (error) { console.error('Error opening URL:', error); }
   };
 
@@ -138,125 +138,90 @@ export default function HomeScreen() {
 
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
 
-  // Progress Dots Component
-  const ProgressDots = () => {
-    const maxDots = 7;
-    const totalArticles = filteredArticles.length;
-    
-    if (totalArticles <= 1) return null;
-    
-    const dotsToShow = Math.min(totalArticles, maxDots);
-    const startIndex = Math.max(0, Math.min(currentIndex - Math.floor(maxDots / 2), totalArticles - maxDots));
-    
-    return (
-      <View style={styles.progressContainer}>
-        {Array.from({ length: dotsToShow }).map((_, i) => {
-          const articleIndex = startIndex + i;
-          const isActive = articleIndex === currentIndex;
-          return (
-            <View
-              key={articleIndex}
-              style={[
-                styles.progressDot,
-                isActive && styles.progressDotActive,
-              ]}
-            />
-          );
-        })}
-        <Text style={styles.progressText}>{currentIndex + 1} / {totalArticles}</Text>
-      </View>
-    );
-  };
-
-  // Carousel Card Component
-  const renderCarouselCard = ({ item, index }: { item: Article; index: number }) => {
-    const categoryColor = getCategoryColor(item.category);
-    const categoryIcon = getCategoryIcon(item.category);
+  // Inshorts-style Card Component
+  const renderInshortsCard = ({ item, index }: { item: Article; index: number }) => {
     const isBookmarked = bookmarkedIds.has(item.id);
+    const timeAgo = getTimeAgo(item.published);
 
     return (
-      <View style={styles.carouselCard}>
-        <View style={styles.carouselCardInner}>
-          {/* Category Color Band */}
-          <View style={[styles.categoryBand, { backgroundColor: categoryColor }]}>
-            <View style={styles.categoryBandContent}>
-              <Ionicons name={categoryIcon as any} size={16} color="#fff" />
-              <Text style={styles.categoryBandText}>{item.category}</Text>
+      <View style={styles.inshortsCard}>
+        {/* Image Section */}
+        <TouchableOpacity 
+          style={styles.imageContainer}
+          onPress={() => openArticle(item.link)}
+          activeOpacity={0.95}
+        >
+          {item.image_url ? (
+            <Image 
+              source={{ uri: item.image_url }} 
+              style={styles.inshortsImage} 
+              resizeMode="cover" 
+            />
+          ) : (
+            <View style={styles.imagePlaceholder}>
+              <Ionicons name="newspaper" size={60} color="#374151" />
             </View>
-            <Text style={styles.timeAgoText}>{getTimeAgo(item.published)}</Text>
+          )}
+          
+          {/* Source Badge & Actions Overlay */}
+          <View style={styles.imageOverlay}>
+            <View style={styles.sourceBadge}>
+              <Ionicons name="globe-outline" size={14} color="#fff" />
+              <Text style={styles.sourceBadgeText}>{item.source}</Text>
+            </View>
+            
+            <View style={styles.imageActions}>
+              <TouchableOpacity 
+                style={styles.imageActionBtn}
+                onPress={() => toggleBookmark(item)}
+              >
+                <Ionicons 
+                  name={isBookmarked ? 'bookmark' : 'bookmark-outline'} 
+                  size={22} 
+                  color="#fff" 
+                />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.imageActionBtn}
+                onPress={() => shareArticle(item)}
+              >
+                <Ionicons name="share-social-outline" size={22} color="#fff" />
+              </TouchableOpacity>
+            </View>
           </View>
+        </TouchableOpacity>
 
-          {/* Main Content */}
-          <TouchableOpacity 
-            style={styles.carouselContent} 
-            onPress={() => openArticle(item.link)}
-            activeOpacity={0.95}
+        {/* Content Section */}
+        <View style={styles.contentSection}>
+          <Text style={styles.inshortsTitle}>{item.title}</Text>
+          
+          <ScrollView 
+            style={styles.descriptionScroll}
+            showsVerticalScrollIndicator={false}
           >
-            {/* Image Section */}
-            {item.image_url ? (
-              <Image 
-                source={{ uri: item.image_url }} 
-                style={styles.carouselImage} 
-                resizeMode="cover" 
-              />
-            ) : (
-              <View style={[styles.carouselImagePlaceholder, { backgroundColor: `${categoryColor}15` }]}>
-                <Ionicons name={categoryIcon as any} size={80} color={categoryColor} />
-              </View>
-            )}
+            <Text style={styles.inshortsDescription}>{item.description}</Text>
+          </ScrollView>
 
-            {/* Text Content */}
-            <View style={styles.carouselTextContent}>
-              <Text style={styles.carouselTitle} numberOfLines={3}>{item.title}</Text>
-              <Text style={styles.carouselDescription} numberOfLines={3}>{item.description}</Text>
-              
-              {/* Source */}
-              <View style={styles.carouselSource}>
-                <Ionicons name="newspaper-outline" size={16} color="#64748B" />
-                <Text style={styles.carouselSourceText}>{item.source}</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-
-          {/* Action Buttons */}
-          <View style={styles.carouselActions}>
+          {/* Footer */}
+          <View style={styles.inshortsFooter}>
+            <Text style={styles.footerText}>
+              {timeAgo} ago • {item.source}
+            </Text>
             <TouchableOpacity 
-              style={[styles.actionButton, isBookmarked && styles.actionButtonActive]} 
-              onPress={() => toggleBookmark(item)}
-            >
-              <Ionicons 
-                name={isBookmarked ? 'bookmark' : 'bookmark-outline'} 
-                size={24} 
-                color={isBookmarked ? '#2563EB' : '#64748B'} 
-              />
-              <Text style={[styles.actionText, isBookmarked && styles.actionTextActive]}>
-                {isBookmarked ? 'Saved' : 'Save'}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={[styles.actionButton, styles.readButton]} 
+              style={styles.readMoreBtn}
               onPress={() => openArticle(item.link)}
             >
-              <Ionicons name="arrow-forward-circle" size={24} color="#2563EB" />
-              <Text style={[styles.actionText, styles.actionTextActive]}>Read</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.actionButton} 
-              onPress={() => shareArticle(item)}
-            >
-              <Ionicons name="share-outline" size={24} color="#64748B" />
-              <Text style={styles.actionText}>Share</Text>
+              <Text style={styles.readMoreText}>Read full article</Text>
+              <Ionicons name="arrow-forward" size={14} color="#2563EB" />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Swipe Hint */}
-        {index === 0 && filteredArticles.length > 1 && (
-          <View style={styles.swipeHint}>
-            <Ionicons name="swap-horizontal" size={16} color="#9CA3AF" />
-            <Text style={styles.swipeHintText}>Swipe to browse</Text>
+        {/* Swipe Indicator */}
+        {index < filteredArticles.length - 1 && (
+          <View style={styles.swipeIndicator}>
+            <Ionicons name="chevron-up" size={20} color="#9CA3AF" />
+            <Text style={styles.swipeText}>Swipe up for next</Text>
           </View>
         )}
       </View>
@@ -306,21 +271,21 @@ export default function HomeScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Svg width={32} height={32} viewBox="0 0 100 100">
+          <Svg width={28} height={28} viewBox="0 0 100 100">
             <Defs><LinearGradient id="headerLogo" x1="0%" y1="0%" x2="100%" y2="100%"><Stop offset="0%" stopColor="#2563EB" /><Stop offset="100%" stopColor="#1D4ED8" /></LinearGradient></Defs>
             <Circle cx="50" cy="50" r="45" fill="none" stroke="url(#headerLogo)" strokeWidth="4" />
             <Path d="M30 35 L50 70 L70 35" fill="none" stroke="url(#headerLogo)" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
           </Svg>
-          <View><Text style={styles.headerTitle}>Verityn</Text><Text style={styles.headerSubtitle}>European News</Text></View>
+          <Text style={styles.headerTitle}>Verityn</Text>
         </View>
         <View style={styles.headerRight}>
           {/* View Mode Toggle */}
           <View style={styles.viewToggle}>
             <TouchableOpacity 
-              style={[styles.viewToggleButton, viewMode === 'carousel' && styles.viewToggleButtonActive]} 
-              onPress={() => setViewMode('carousel')}
+              style={[styles.viewToggleButton, viewMode === 'cards' && styles.viewToggleButtonActive]} 
+              onPress={() => setViewMode('cards')}
             >
-              <Ionicons name="albums" size={18} color={viewMode === 'carousel' ? '#fff' : '#64748B'} />
+              <Ionicons name="albums" size={18} color={viewMode === 'cards' ? '#fff' : '#64748B'} />
             </TouchableOpacity>
             <TouchableOpacity 
               style={[styles.viewToggleButton, viewMode === 'list' && styles.viewToggleButtonActive]} 
@@ -330,24 +295,31 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
           <TouchableOpacity onPress={onRefresh} style={styles.refreshButton}>
-            <Ionicons name="refresh" size={22} color="#2563EB" />
+            <Ionicons name="refresh" size={20} color="#2563EB" />
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Category Filter */}
-      <View style={styles.filterSection}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterContainer}>
-          <TouchableOpacity style={[styles.filterChip, activeFilter === 'all' && styles.filterChipActive]} onPress={() => { setActiveFilter('all'); setCurrentIndex(0); }}>
-            <Text style={[styles.filterChipText, activeFilter === 'all' && styles.filterChipTextActive]}>All</Text>
+      {/* Category Tabs */}
+      <View style={styles.categoryTabs}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsContainer}>
+          <TouchableOpacity 
+            style={[styles.tab, activeFilter === 'all' && styles.tabActive]} 
+            onPress={() => { setActiveFilter('all'); setCurrentIndex(0); }}
+          >
+            <Text style={[styles.tabText, activeFilter === 'all' && styles.tabTextActive]}>My Feed</Text>
           </TouchableOpacity>
           {selectedCategories.map((catId) => {
-            const category = CATEGORIES.find(c => c.id === catId); if (!category) return null;
+            const category = CATEGORIES.find(c => c.id === catId); 
+            if (!category) return null;
             const isActive = activeFilter === catId;
             return (
-              <TouchableOpacity key={catId} style={[styles.filterChip, isActive && { backgroundColor: category.color }]} onPress={() => { setActiveFilter(catId); setCurrentIndex(0); }}>
-                <Ionicons name={category.icon as any} size={16} color={isActive ? '#fff' : category.color} style={styles.filterIcon} />
-                <Text style={[styles.filterChipText, isActive && styles.filterChipTextActive]}>{category.name}</Text>
+              <TouchableOpacity 
+                key={catId} 
+                style={[styles.tab, isActive && styles.tabActive]} 
+                onPress={() => { setActiveFilter(catId); setCurrentIndex(0); }}
+              >
+                <Text style={[styles.tabText, isActive && styles.tabTextActive]}>{category.name}</Text>
               </TouchableOpacity>
             );
           })}
@@ -363,22 +335,20 @@ export default function HomeScreen() {
       )}
 
       {/* Content */}
-      {viewMode === 'carousel' ? (
-        // Carousel View
-        <View style={styles.carouselContainer}>
-          <ProgressDots />
+      {viewMode === 'cards' ? (
+        // Inshorts-style Cards View
+        <View style={styles.cardsContainer}>
           {filteredArticles.length > 0 ? (
             <FlatList
               ref={flatListRef}
               data={filteredArticles}
-              renderItem={renderCarouselCard}
+              renderItem={renderInshortsCard}
               keyExtractor={(item) => item.id}
-              horizontal
               pagingEnabled
-              showsHorizontalScrollIndicator={false}
+              showsVerticalScrollIndicator={false}
               onViewableItemsChanged={onViewableItemsChanged}
               viewabilityConfig={viewabilityConfig}
-              snapToInterval={SCREEN_WIDTH}
+              snapToInterval={CARD_HEIGHT}
               decelerationRate="fast"
               refreshControl={
                 <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#2563EB" colors={['#2563EB']} />
@@ -389,6 +359,13 @@ export default function HomeScreen() {
               <Ionicons name="newspaper-outline" size={64} color="#D1D5DB" />
               <Text style={styles.emptyTitle}>No Articles Found</Text>
               <Text style={styles.emptyText}>{activeFilter !== 'all' ? 'No news in this category.' : 'Pull down to refresh.'}</Text>
+            </View>
+          )}
+          
+          {/* Progress Indicator */}
+          {filteredArticles.length > 0 && (
+            <View style={styles.progressBar}>
+              <Text style={styles.progressText}>{currentIndex + 1} / {filteredArticles.length}</Text>
             </View>
           )}
         </View>
@@ -422,64 +399,172 @@ const styles = StyleSheet.create({
   loadingText: { color: '#64748B', fontSize: 16 },
   
   // Header
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
-  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  headerTitle: { fontSize: 22, fontWeight: '700', color: '#1E293B' },
-  headerSubtitle: { fontSize: 11, color: '#64748B', marginTop: 1 },
+  header: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    paddingHorizontal: 16, 
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerTitle: { fontSize: 20, fontWeight: '700', color: '#1E293B' },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  refreshButton: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#F0F7FF', justifyContent: 'center', alignItems: 'center' },
+  refreshButton: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#F0F7FF', justifyContent: 'center', alignItems: 'center' },
   
   // View Toggle
-  viewToggle: { flexDirection: 'row', backgroundColor: '#F1F5F9', borderRadius: 10, padding: 3 },
-  viewToggleButton: { width: 34, height: 34, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
+  viewToggle: { flexDirection: 'row', backgroundColor: '#F1F5F9', borderRadius: 8, padding: 2 },
+  viewToggleButton: { width: 32, height: 32, borderRadius: 6, justifyContent: 'center', alignItems: 'center' },
   viewToggleButtonActive: { backgroundColor: '#2563EB' },
   
-  // Filter
-  filterSection: { borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
-  filterContainer: { paddingHorizontal: 16, paddingVertical: 10, gap: 8 },
-  filterChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 18, backgroundColor: '#F1F5F9', marginRight: 8 },
-  filterChipActive: { backgroundColor: '#2563EB' },
-  filterIcon: { marginRight: 6 },
-  filterChipText: { fontSize: 13, fontWeight: '500', color: '#64748B' },
-  filterChipTextActive: { color: '#fff' },
+  // Category Tabs
+  categoryTabs: { borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  tabsContainer: { paddingHorizontal: 16, paddingVertical: 8 },
+  tab: { paddingHorizontal: 16, paddingVertical: 8, marginRight: 8 },
+  tabActive: { borderBottomWidth: 2, borderBottomColor: '#2563EB' },
+  tabText: { fontSize: 14, fontWeight: '500', color: '#64748B' },
+  tabTextActive: { color: '#2563EB', fontWeight: '600' },
   
   // Error
   errorContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, backgroundColor: '#FEF2F2', marginHorizontal: 16, marginTop: 12, borderRadius: 12, gap: 8 },
   errorText: { color: '#DC2626', fontSize: 14 },
   
-  // Carousel
-  carouselContainer: { flex: 1 },
-  progressContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, gap: 6 },
-  progressDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#E2E8F0' },
-  progressDotActive: { backgroundColor: '#2563EB', width: 24 },
-  progressText: { fontSize: 12, color: '#9CA3AF', marginLeft: 12, fontWeight: '500' },
+  // Cards Container
+  cardsContainer: { flex: 1 },
   
-  carouselCard: { width: SCREEN_WIDTH, paddingHorizontal: 16, paddingBottom: 8 },
-  carouselCardInner: { borderRadius: 16, overflow: 'hidden', backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0' },
-  categoryBand: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10 },
-  categoryBandContent: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  categoryBandText: { color: '#fff', fontSize: 14, fontWeight: '600', textTransform: 'capitalize' },
-  timeAgoText: { color: 'rgba(255,255,255,0.85)', fontSize: 12 },
+  // Inshorts Card
+  inshortsCard: { 
+    height: CARD_HEIGHT,
+    backgroundColor: '#fff',
+  },
+  imageContainer: {
+    height: CARD_HEIGHT * 0.4,
+    position: 'relative',
+  },
+  inshortsImage: { 
+    width: '100%', 
+    height: '100%',
+    backgroundColor: '#1F2937',
+  },
+  imagePlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#1F2937',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    padding: 12,
+    paddingBottom: 16,
+    background: 'linear-gradient(transparent, rgba(0,0,0,0.6))',
+  },
+  sourceBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    gap: 6,
+  },
+  sourceBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  imageActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  imageActionBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   
-  carouselContent: { backgroundColor: '#fff' },
-  carouselImage: { width: '100%', height: 220, backgroundColor: '#F1F5F9' },
-  carouselImagePlaceholder: { width: '100%', height: 220, justifyContent: 'center', alignItems: 'center' },
+  // Content Section
+  contentSection: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
+  inshortsTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#111827',
+    lineHeight: 30,
+    marginBottom: 12,
+  },
+  descriptionScroll: {
+    flex: 1,
+  },
+  inshortsDescription: {
+    fontSize: 16,
+    color: '#374151',
+    lineHeight: 26,
+  },
   
-  carouselTextContent: { padding: 20 },
-  carouselTitle: { fontSize: 20, fontWeight: '700', color: '#1E293B', lineHeight: 28, marginBottom: 12 },
-  carouselDescription: { fontSize: 15, color: '#64748B', lineHeight: 24, marginBottom: 16 },
-  carouselSource: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  carouselSourceText: { fontSize: 13, color: '#64748B' },
+  // Footer
+  inshortsFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  footerText: {
+    fontSize: 12,
+    color: '#9CA3AF',
+  },
+  readMoreBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  readMoreText: {
+    fontSize: 13,
+    color: '#2563EB',
+    fontWeight: '600',
+  },
   
-  carouselActions: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', backgroundColor: '#F8FAFC', paddingVertical: 14, borderTopWidth: 1, borderTopColor: '#E2E8F0' },
-  actionButton: { alignItems: 'center', gap: 4, flex: 1 },
-  actionButtonActive: {},
-  readButton: {},
-  actionText: { fontSize: 12, color: '#64748B', fontWeight: '500' },
-  actionTextActive: { color: '#2563EB' },
+  // Swipe Indicator
+  swipeIndicator: {
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  swipeText: {
+    fontSize: 11,
+    color: '#9CA3AF',
+  },
   
-  swipeHint: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, gap: 6 },
-  swipeHintText: { fontSize: 12, color: '#9CA3AF' },
+  // Progress Bar
+  progressBar: {
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  progressText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
   
   // List View Styles
   listContainer: { flex: 1 },
