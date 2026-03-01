@@ -1,4 +1,4 @@
-import * as SecureStore from 'expo-secure-store';
+import { secureStorage } from './secureStorage';
 
 const KEYWORDS_KEY = 'verityn_user_keywords';
 
@@ -9,7 +9,7 @@ export interface UserKeywords {
 
 export const getKeywords = async (): Promise<string[]> => {
   try {
-    const stored = await SecureStore.getItemAsync(KEYWORDS_KEY);
+    const stored = await secureStorage.getItem(KEYWORDS_KEY);
     if (stored) {
       const data: UserKeywords = JSON.parse(stored);
       return data.keywords || [];
@@ -26,7 +26,7 @@ export const saveKeywords = async (keywords: string[]): Promise<boolean> => {
       keywords: keywords.map(k => k.trim().toLowerCase()).filter(k => k.length > 0),
       updatedAt: new Date().toISOString(),
     };
-    await SecureStore.setItemAsync(KEYWORDS_KEY, JSON.stringify(data));
+    await secureStorage.setItem(KEYWORDS_KEY, JSON.stringify(data));
     return true;
   } catch (error) {
     console.error('Error saving keywords:', error);
@@ -65,7 +65,7 @@ export const removeKeyword = async (keyword: string): Promise<boolean> => {
 
 export const clearKeywords = async (): Promise<boolean> => {
   try {
-    await SecureStore.deleteItemAsync(KEYWORDS_KEY);
+    await secureStorage.deleteItem(KEYWORDS_KEY);
     return true;
   } catch (error) {
     console.error('Error clearing keywords:', error);
