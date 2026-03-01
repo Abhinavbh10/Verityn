@@ -452,7 +452,7 @@ const styles = StyleSheet.create({
   progressDotActive: { backgroundColor: '#2563EB', width: 24 },
   progressText: { fontSize: 12, color: '#9CA3AF', marginLeft: 12, fontWeight: '500' },
   
-  carouselCard: { width: SCREEN_WIDTH, paddingHorizontal: 16, paddingBottom: 8 },
+  carouselCard: { width: SCREEN_WIDTH, paddingHorizontal: 16, paddingBottom: 8, overflow: 'hidden' },
   categoryBand: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10, borderTopLeftRadius: 16, borderTopRightRadius: 16 },
   categoryBandContent: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   categoryBandText: { color: '#fff', fontSize: 14, fontWeight: '600', textTransform: 'capitalize' },
