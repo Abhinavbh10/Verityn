@@ -110,7 +110,9 @@ export default function ForYouScreen() {
     } else { await addBookmark(article); setBookmarkedIds(prev => new Set(prev).add(article.id)); }
   };
 
-  const filteredArticles = activeKeyword === 'all' ? articles : articles.filter(a => a.title.toLowerCase().includes(activeKeyword) || a.description.toLowerCase().includes(activeKeyword));
+  // Only show articles with images
+  const articlesWithImages = articles.filter(a => a.image_url);
+  const filteredArticles = activeKeyword === 'all' ? articlesWithImages : articlesWithImages.filter(a => a.title.toLowerCase().includes(activeKeyword) || a.description.toLowerCase().includes(activeKeyword));
 
   const renderArticle = ({ item }: { item: Article }) => {
     const categoryColor = getCategoryColor(item.category); const isBookmarked = bookmarkedIds.has(item.id);
