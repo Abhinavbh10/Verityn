@@ -100,29 +100,134 @@ def generate_article_id(title: str, link: str) -> str:
     content = f"{title}{link}"
     return hashlib.md5(content.encode()).hexdigest()[:12]
 
-def extract_image_from_entry(entry) -> Optional[str]:
-    """Extract image URL from RSS entry"""
-    # Try media:thumbnail
-    if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail:
-        return entry.media_thumbnail[0].get('url')
+def is_high_quality_image(url: str) -> bool:
+    """Check if image URL appears to be high quality (not a thumbnail)"""
+    if not url:
+        return False
+    url_lower = url.lower()
+    # Reject common thumbnail patterns
+    thumbnail_patterns = ['thumbnail', 'thumb', '_s.', '_t.', '_xs.', '_small', 
+                         '150x', '100x', '75x', '50x', '/s/', '-small', 'icon']
+    for pattern in thumbnail_patterns:
+        if pattern in url_lower:
+            return False
+    # Prefer larger image patterns
+    return True
+
+def get_best_image_url(url: str) -> str:
+    """Try to get higher quality version of image URL"""
+    if not url:
+        return url
     
-    # Try media:content
+    # BBC images - upgrade to larger size
+    if 'ichef.bbci.co.uk' in url:
+        # Replace common BBC image size patterns with larger sizes
+        url = re.sub(r'/\d+xn/', '/976xn/', url)
+        url = re.sub(r'/\d+x\d+/', '/976x549/', url)
+    
+    # Guardian images - use larger size
+    if 'guim.co.uk' in url:
+        url = re.sub(r'/\d+\.jpg', '/1000.jpg', url)
+        
+    # Remove webp format preference for compatibility
+    if '.webp' in url and 'format=auto' not in url:
+        url = url.replace('.webp', '.jpg')
+    
+    return url
+
+def extract_image_from_entry(entry) -> Optional[str]:
+    """Extract high-quality image URL from RSS entry"""
+    image_url = None
+    
+    # Try media:content first (usually has better quality)
     if hasattr(entry, 'media_content') and entry.media_content:
+        # Sort by width if available, prefer larger images
+        media_images = []
         for media in entry.media_content:
             if media.get('medium') == 'image' or media.get('type', '').startswith('image'):
-                return media.get('url')
+                width = int(media.get('width', 0) or 0)
+                media_images.append((width, media.get('url')))
+        if media_images:
+            # Get the largest image
+            media_images.sort(reverse=True)
+            image_url = media_images[0][1]
+    
+    # Try media:thumbnail
+    if not image_url and hasattr(entry, 'media_thumbnail') and entry.media_thumbnail:
+        # Get largest thumbnail
+        thumbnails = []
+        for thumb in entry.media_thumbnail:
+            width = int(thumb.get('width', 0) or 0)
+            thumbnails.append((width, thumb.get('url')))
+        if thumbnails:
+            thumbnails.sort(reverse=True)
+            image_url = thumbnails[0][1]
     
     # Try enclosure
-    if hasattr(entry, 'enclosures') and entry.enclosures:
+    if not image_url and hasattr(entry, 'enclosures') and entry.enclosures:
         for enc in entry.enclosures:
             if enc.get('type', '').startswith('image'):
-                return enc.get('href') or enc.get('url')
+                image_url = enc.get('href') or enc.get('url')
+                break
     
     # Try links
-    if hasattr(entry, 'links'):
+    if not image_url and hasattr(entry, 'links'):
         for link in entry.links:
             if link.get('type', '').startswith('image'):
-                return link.get('href')
+                image_url = link.get('href')
+                break
+    
+    # Upgrade to higher quality if possible
+    if image_url:
+        image_url = get_best_image_url(image_url)
+        if not is_high_quality_image(image_url):
+            return None  # Reject low quality images
+    
+    return image_url
+
+async def scrape_article_image(url: str) -> Optional[str]:
+    """Scrape article page to find a high-quality image"""
+    try:
+        async with httpx.AsyncClient(timeout=8.0, follow_redirects=True) as client:
+            response = await client.get(url, headers={
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            })
+            response.raise_for_status()
+            
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # Try Open Graph image (usually high quality)
+        og_image = soup.find('meta', property='og:image')
+        if og_image and og_image.get('content'):
+            img_url = og_image['content']
+            if is_high_quality_image(img_url):
+                return get_best_image_url(img_url)
+        
+        # Try Twitter card image
+        twitter_image = soup.find('meta', {'name': 'twitter:image'})
+        if twitter_image and twitter_image.get('content'):
+            img_url = twitter_image['content']
+            if is_high_quality_image(img_url):
+                return get_best_image_url(img_url)
+        
+        # Try article main image
+        article = soup.find('article')
+        if article:
+            img = article.find('img', src=True)
+            if img and img.get('src'):
+                img_url = img['src']
+                # Make absolute URL
+                if img_url.startswith('//'):
+                    img_url = 'https:' + img_url
+                elif img_url.startswith('/'):
+                    from urllib.parse import urlparse
+                    parsed = urlparse(url)
+                    img_url = f"{parsed.scheme}://{parsed.netloc}{img_url}"
+                if is_high_quality_image(img_url):
+                    return get_best_image_url(img_url)
+                    
+    except Exception as e:
+        print(f"Error scraping image from {url}: {str(e)}")
     
     return None
 
