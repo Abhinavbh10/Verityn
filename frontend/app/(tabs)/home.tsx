@@ -176,78 +176,80 @@ export default function HomeScreen() {
 
     return (
       <View style={styles.carouselCard}>
-        {/* Category Color Band */}
-        <View style={[styles.categoryBand, { backgroundColor: categoryColor }]}>
-          <View style={styles.categoryBandContent}>
-            <Ionicons name={categoryIcon as any} size={16} color="#fff" />
-            <Text style={styles.categoryBandText}>{item.category}</Text>
-          </View>
-          <Text style={styles.timeAgoText}>{getTimeAgo(item.published)}</Text>
-        </View>
-
-        {/* Main Content */}
-        <TouchableOpacity 
-          style={styles.carouselContent} 
-          onPress={() => openArticle(item.link)}
-          activeOpacity={0.95}
-        >
-          {/* Image Section */}
-          {item.image_url ? (
-            <Image 
-              source={{ uri: item.image_url }} 
-              style={styles.carouselImage} 
-              resizeMode="cover" 
-            />
-          ) : (
-            <View style={[styles.carouselImagePlaceholder, { backgroundColor: `${categoryColor}15` }]}>
-              <Ionicons name={categoryIcon as any} size={80} color={categoryColor} />
+        <View style={styles.carouselCardInner}>
+          {/* Category Color Band */}
+          <View style={[styles.categoryBand, { backgroundColor: categoryColor }]}>
+            <View style={styles.categoryBandContent}>
+              <Ionicons name={categoryIcon as any} size={16} color="#fff" />
+              <Text style={styles.categoryBandText}>{item.category}</Text>
             </View>
-          )}
-
-          {/* Text Content */}
-          <View style={styles.carouselTextContent}>
-            <Text style={styles.carouselTitle} numberOfLines={3}>{item.title}</Text>
-            <Text style={styles.carouselDescription} numberOfLines={4}>{item.description}</Text>
-            
-            {/* Source */}
-            <View style={styles.carouselSource}>
-              <Ionicons name="newspaper-outline" size={16} color="#64748B" />
-              <Text style={styles.carouselSourceText}>{item.source}</Text>
-            </View>
+            <Text style={styles.timeAgoText}>{getTimeAgo(item.published)}</Text>
           </View>
-        </TouchableOpacity>
 
-        {/* Action Buttons */}
-        <View style={styles.carouselActions}>
+          {/* Main Content */}
           <TouchableOpacity 
-            style={[styles.actionButton, isBookmarked && styles.actionButtonActive]} 
-            onPress={() => toggleBookmark(item)}
-          >
-            <Ionicons 
-              name={isBookmarked ? 'bookmark' : 'bookmark-outline'} 
-              size={26} 
-              color={isBookmarked ? '#2563EB' : '#64748B'} 
-            />
-            <Text style={[styles.actionText, isBookmarked && styles.actionTextActive]}>
-              {isBookmarked ? 'Saved' : 'Save'}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={[styles.actionButton, styles.readButton]} 
+            style={styles.carouselContent} 
             onPress={() => openArticle(item.link)}
+            activeOpacity={0.95}
           >
-            <Ionicons name="arrow-forward-circle" size={26} color="#2563EB" />
-            <Text style={[styles.actionText, styles.actionTextActive]}>Read</Text>
+            {/* Image Section */}
+            {item.image_url ? (
+              <Image 
+                source={{ uri: item.image_url }} 
+                style={styles.carouselImage} 
+                resizeMode="cover" 
+              />
+            ) : (
+              <View style={[styles.carouselImagePlaceholder, { backgroundColor: `${categoryColor}15` }]}>
+                <Ionicons name={categoryIcon as any} size={80} color={categoryColor} />
+              </View>
+            )}
+
+            {/* Text Content */}
+            <View style={styles.carouselTextContent}>
+              <Text style={styles.carouselTitle} numberOfLines={3}>{item.title}</Text>
+              <Text style={styles.carouselDescription} numberOfLines={3}>{item.description}</Text>
+              
+              {/* Source */}
+              <View style={styles.carouselSource}>
+                <Ionicons name="newspaper-outline" size={16} color="#64748B" />
+                <Text style={styles.carouselSourceText}>{item.source}</Text>
+              </View>
+            </View>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.actionButton} 
-            onPress={() => shareArticle(item)}
-          >
-            <Ionicons name="share-outline" size={26} color="#64748B" />
-            <Text style={styles.actionText}>Share</Text>
-          </TouchableOpacity>
+          {/* Action Buttons */}
+          <View style={styles.carouselActions}>
+            <TouchableOpacity 
+              style={[styles.actionButton, isBookmarked && styles.actionButtonActive]} 
+              onPress={() => toggleBookmark(item)}
+            >
+              <Ionicons 
+                name={isBookmarked ? 'bookmark' : 'bookmark-outline'} 
+                size={24} 
+                color={isBookmarked ? '#2563EB' : '#64748B'} 
+              />
+              <Text style={[styles.actionText, isBookmarked && styles.actionTextActive]}>
+                {isBookmarked ? 'Saved' : 'Save'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.actionButton, styles.readButton]} 
+              onPress={() => openArticle(item.link)}
+            >
+              <Ionicons name="arrow-forward-circle" size={24} color="#2563EB" />
+              <Text style={[styles.actionText, styles.actionTextActive]}>Read</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.actionButton} 
+              onPress={() => shareArticle(item)}
+            >
+              <Ionicons name="share-outline" size={24} color="#64748B" />
+              <Text style={styles.actionText}>Share</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Swipe Hint */}
