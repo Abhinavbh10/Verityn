@@ -376,7 +376,7 @@ export default function HomeScreen() {
               showsHorizontalScrollIndicator={false}
               onViewableItemsChanged={onViewableItemsChanged}
               viewabilityConfig={viewabilityConfig}
-              snapToInterval={SCREEN_WIDTH}
+              snapToInterval={SCREEN_WIDTH - 32}
               decelerationRate="fast"
               refreshControl={
                 <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#2563EB" colors={['#2563EB']} />
