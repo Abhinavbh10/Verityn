@@ -8,6 +8,8 @@ from datetime import datetime, timedelta
 from pydantic import BaseModel
 import hashlib
 import time
+import re
+from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -22,6 +24,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Minimum description length (characters) - if shorter, we'll try to fetch more
+MIN_DESCRIPTION_LENGTH = 200
 
 # Models
 class NewsArticle(BaseModel):
