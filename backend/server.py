@@ -349,8 +349,26 @@ async def fetch_rss_feed(url: str, source: str, category: str) -> List[NewsArtic
                 if content and not isinstance(content, Exception):
                     entries_data[idx]['description'] = content
         
-        # Create articles
+        # Scrape images for articles without images (limit to 5 per feed)
+        image_scrape_tasks = []
+        image_scrape_indices = []
+        for i, entry in enumerate(entries_data):
+            if not entry['image_url'] and len(image_scrape_tasks) < 5:
+                image_scrape_tasks.append(scrape_article_image(entry['link']))
+                image_scrape_indices.append(i)
+        
+        if image_scrape_tasks:
+            scraped_images = await asyncio.gather(*image_scrape_tasks, return_exceptions=True)
+            for idx, img_url in zip(image_scrape_indices, scraped_images):
+                if img_url and not isinstance(img_url, Exception):
+                    entries_data[idx]['image_url'] = img_url
+        
+        # Create articles - ONLY include articles with high-quality images
         for entry in entries_data:
+            # Skip articles without images
+            if not entry['image_url']:
+                continue
+                
             # Ensure description has minimum length with padding if needed
             description = entry['description']
             if len(description) < MIN_DESCRIPTION_LENGTH:
