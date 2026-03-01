@@ -456,7 +456,7 @@ const styles = StyleSheet.create({
   
   carouselCard: { width: SCREEN_WIDTH, paddingHorizontal: 16, paddingBottom: 8 },
   carouselCardInner: { borderRadius: 16, overflow: 'hidden', backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0' },
-  categoryBand: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10, borderTopLeftRadius: 16, borderTopRightRadius: 16 },
+  categoryBand: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10 },
   categoryBandContent: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   categoryBandText: { color: '#fff', fontSize: 14, fontWeight: '600', textTransform: 'capitalize' },
   timeAgoText: { color: 'rgba(255,255,255,0.85)', fontSize: 12 },
