@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
   categoryBandText: { color: '#fff', fontSize: 14, fontWeight: '600', textTransform: 'capitalize' },
   timeAgoText: { color: 'rgba(255,255,255,0.85)', fontSize: 12 },
   
-  carouselContent: { backgroundColor: '#fff', borderLeftWidth: 1, borderRightWidth: 1, borderColor: '#F1F5F9' },
+  carouselContent: { backgroundColor: '#fff' },
   carouselImage: { width: '100%', height: 220, backgroundColor: '#F1F5F9' },
   carouselImagePlaceholder: { width: '100%', height: 220, justifyContent: 'center', alignItems: 'center' },
   
