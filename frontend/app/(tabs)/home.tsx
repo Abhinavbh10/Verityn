@@ -391,23 +391,13 @@ const styles = StyleSheet.create({
   
   // Header
   header: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    paddingHorizontal: 16, 
-    paddingVertical: 10,
+    paddingHorizontal: 20, 
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
   },
-  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  headerTitle: { fontSize: 20, fontWeight: '700', color: '#1E293B' },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  refreshButton: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#F0F7FF', justifyContent: 'center', alignItems: 'center' },
-  
-  // View Toggle
-  viewToggle: { flexDirection: 'row', backgroundColor: '#F1F5F9', borderRadius: 8, padding: 2 },
-  viewToggleButton: { width: 32, height: 32, borderRadius: 6, justifyContent: 'center', alignItems: 'center' },
-  viewToggleButtonActive: { backgroundColor: '#2563EB' },
+  headerTitle: { fontSize: 24, fontWeight: '700', color: '#1E293B' },
+  headerSubtitle: { fontSize: 13, color: '#64748B', marginTop: 2 },
   
   // Category Tabs
   categoryTabs: { borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
