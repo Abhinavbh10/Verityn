@@ -197,15 +197,12 @@ export default function HomeScreen() {
 
         {/* Content Section - Expanded */}
         <View style={styles.contentSection}>
-          {/* Category & Reading Time */}
+          {/* Category & Time Row */}
           <View style={styles.metaRow}>
             <View style={[styles.categoryTag, { backgroundColor: `${categoryColor}15` }]}>
               <Text style={[styles.categoryTagText, { color: categoryColor }]}>{item.category}</Text>
             </View>
-            <View style={styles.readingTime}>
-              <Ionicons name="time-outline" size={14} color="#9CA3AF" />
-              <Text style={styles.readingTimeText}>{readingTime} min read</Text>
-            </View>
+            <Text style={styles.timeText}>{timeAgo} ago</Text>
           </View>
 
           {/* Title */}
@@ -219,17 +216,6 @@ export default function HomeScreen() {
                 {' '}Read more →
               </Text>
             </Text>
-          </View>
-
-          {/* Footer */}
-          <View style={styles.inshortsFooter}>
-            <View style={styles.footerLeft}>
-              <Ionicons name="time-outline" size={14} color="#9CA3AF" />
-              <Text style={styles.footerText}>{timeAgo} ago</Text>
-            </View>
-            <View style={styles.footerRight}>
-              <Text style={styles.footerSource}>{item.source}</Text>
-            </View>
           </View>
         </View>
 
