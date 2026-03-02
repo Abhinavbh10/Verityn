@@ -43,6 +43,58 @@ STOP_WORDS = {
     'years', 'day', 'days', 'time', 'week', 'month', 'today', 'news', 'report', 'reports'
 }
 
+# Junk patterns to remove from descriptions
+JUNK_PATTERNS = [
+    # Newsletter signup junk
+    r'Sign up for breaking news.*?sign-up was successful',
+    r'Sign up for.*?newsletter',
+    r'Subscribe to our.*?newsletter',
+    r'You are now subscribed',
+    r'Your newsletter sign-up was successful',
+    r'Get the latest.*?delivered to your inbox',
+    r'Join our mailing list',
+    r'Enter your email.*?subscribe',
+    # Social media prompts
+    r'Follow us on (Twitter|Facebook|Instagram|LinkedIn)',
+    r'Share this (article|story) on',
+    r'Like us on Facebook',
+    # Cookie/privacy notices
+    r'We use cookies.*?experience',
+    r'By continuing.*?cookies',
+    r'Accept all cookies',
+    # Read more padding (our own)
+    r'Read the full article for more details and comprehensive coverage of this developing story\.',
+    # Generic filler
+    r'Click here to.*',
+    r'Tap here to.*',
+    r'Continue reading\.\.\.',
+    # Advertisement markers  
+    r'\[Advertisement\]',
+    r'Sponsored content',
+    r'ADVERTISEMENT',
+]
+
+def clean_description(text: str) -> str:
+    """Remove junk content from article descriptions"""
+    if not text:
+        return text
+    
+    cleaned = text
+    
+    # Remove junk patterns
+    for pattern in JUNK_PATTERNS:
+        cleaned = re.sub(pattern, '', cleaned, flags=re.IGNORECASE | re.DOTALL)
+    
+    # Clean up multiple spaces and newlines
+    cleaned = re.sub(r'\s+', ' ', cleaned)
+    cleaned = cleaned.strip()
+    
+    # Remove leading/trailing punctuation artifacts
+    cleaned = re.sub(r'^[\s\-–—:,;]+', '', cleaned)
+    cleaned = re.sub(r'[\s\-–—:,;]+$', '', cleaned)
+    
+    return cleaned.strip()
+
 def is_content_relevant(title: str, description: str, min_matches: int = 2) -> bool:
     """Check if description content is relevant to the title using keyword matching"""
     if not title or not description:
@@ -412,18 +464,20 @@ async def fetch_rss_feed(url: str, source: str, category: str) -> List[NewsArtic
             if not entry['image_url']:
                 continue
             
-            # Validate content relevance
-            if not is_content_relevant(entry['title'], entry['description']):
+            # Clean the description first (remove junk)
+            description = clean_description(entry['description'])
+            
+            # Validate content relevance with cleaned description
+            if not is_content_relevant(entry['title'], description):
                 print(f"Skipping irrelevant content: {entry['title'][:50]}...")
                 continue
-                
-            # Ensure description has minimum length with padding if needed
-            description = entry['description']
-            if len(description) < MIN_DESCRIPTION_LENGTH:
-                # Pad with a call-to-action
-                description = description + " Read the full article for more details and comprehensive coverage of this developing story."
             
-            # Limit to 500 chars
+            # Skip if description is too short after cleaning
+            if len(description) < 50:
+                print(f"Skipping too-short content: {entry['title'][:50]}...")
+                continue
+            
+            # Limit to 500 chars, cut at sentence boundary
             if len(description) > 500:
                 sentences = description[:520].split('. ')
                 description = '. '.join(sentences[:-1]) + '.' if len(sentences) > 1 else description[:500] + '...'
