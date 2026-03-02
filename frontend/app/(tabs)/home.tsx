@@ -507,34 +507,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   
-  // Footer
-  inshortsFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
-  },
-  footerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  footerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: 12,
-    color: '#9CA3AF',
-  },
-  footerSource: {
-    fontSize: 12,
-    color: '#6B7280',
-    fontWeight: '500',
-  },
-  
   // Swipe Indicator
   swipeIndicator: {
     alignItems: 'center',
