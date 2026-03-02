@@ -218,14 +218,6 @@ export default function HomeScreen() {
             </Text>
           </View>
         </View>
-
-        {/* Swipe Indicator */}
-        {index < filteredArticles.length - 1 && (
-          <View style={styles.swipeIndicator}>
-            <Ionicons name="chevron-up" size={18} color="#CBD5E1" />
-            <Text style={styles.swipeText}>Swipe up for next</Text>
-          </View>
-        )}
       </View>
     );
   };
