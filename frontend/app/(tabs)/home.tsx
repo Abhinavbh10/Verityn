@@ -499,16 +499,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   
-  // Swipe Indicator
-  swipeIndicator: {
-    alignItems: 'center',
-    paddingVertical: 6,
-  },
-  swipeText: {
-    fontSize: 10,
-    color: '#CBD5E1',
-  },
-  
   // Progress Bar
   progressBar: {
     position: 'absolute',
