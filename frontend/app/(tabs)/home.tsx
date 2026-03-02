@@ -2,19 +2,21 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, RefreshControl,
   ActivityIndicator, ScrollView, Image, Dimensions,
-  FlatList, Share,
+  FlatList, Share, Platform, Vibration,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
 import { format, parseISO, isValid, formatDistanceToNow } from 'date-fns';
 import * as WebBrowser from 'expo-web-browser';
 import Constants from 'expo-constants';
 import { addBookmark, removeBookmark, getBookmarks } from '../../src/utils/bookmarks';
 import { getPreferences } from '../../src/utils/storage';
+import { useTheme } from '../../src/utils/theme';
+import { saveArticleOffline, isArticleSavedOffline } from '../../src/utils/offline';
+import { useShakeDetector } from '../../src/hooks/useShakeDetector';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const CARD_HEIGHT = SCREEN_HEIGHT - 180; // Account for header, tabs, and bottom bar
+const CARD_HEIGHT = SCREEN_HEIGHT - 180;
 
 interface Article {
   id: string; title: string; description: string; link: string;
@@ -36,6 +38,7 @@ const CATEGORIES: Category[] = [
 const API_BASE_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
 export default function HomeScreen() {
+  const { colors, isDark } = useTheme();
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -43,9 +46,25 @@ export default function HomeScreen() {
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const [error, setError] = useState<string | null>(null);
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
-  const [viewMode, setViewMode] = useState<'list' | 'cards'>('cards');
+  const [offlineIds, setOfflineIds] = useState<Set<string>>(new Set());
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [shakeMessage, setShakeMessage] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
+
+  // Shake to refresh
+  const handleShake = useCallback(() => {
+    if (!refreshing && !loading) {
+      // Vibrate on shake (only on native)
+      if (Platform.OS !== 'web') {
+        Vibration.vibrate(100);
+      }
+      setShakeMessage('Refreshing...');
+      onRefresh();
+      setTimeout(() => setShakeMessage(null), 2000);
+    }
+  }, [refreshing, loading]);
+
+  useShakeDetector({ onShake: handleShake });
 
   useEffect(() => { loadPreferencesAndFetch(); loadBookmarks(); }, []);
 
@@ -142,14 +161,10 @@ export default function HomeScreen() {
     const isBookmarked = bookmarkedIds.has(item.id);
     const timeAgo = getTimeAgo(item.published);
     const categoryColor = getCategoryColor(item.category);
-    
-    // Calculate reading time (avg 200 words per minute)
-    const wordCount = (item.title + ' ' + item.description).split(/\s+/).length;
-    const readingTime = Math.max(1, Math.ceil(wordCount / 200));
 
     return (
-      <View style={styles.inshortsCard}>
-        {/* Image Section - Reduced height */}
+      <View style={[styles.inshortsCard, { backgroundColor: colors.background }]}>
+        {/* Image Section */}
         <TouchableOpacity 
           style={styles.imageContainer}
           onPress={() => openArticle(item.link)}
@@ -162,7 +177,7 @@ export default function HomeScreen() {
               resizeMode="cover" 
             />
           ) : (
-            <View style={[styles.imagePlaceholder, { backgroundColor: `${categoryColor}15` }]}>
+            <View style={[styles.imagePlaceholder, { backgroundColor: colors.imagePlaceholder }]}>
               <Ionicons name="newspaper" size={50} color={categoryColor} />
             </View>
           )}
@@ -195,24 +210,24 @@ export default function HomeScreen() {
           </View>
         </TouchableOpacity>
 
-        {/* Content Section - Expanded */}
-        <View style={styles.contentSection}>
+        {/* Content Section */}
+        <View style={[styles.contentSection, { backgroundColor: colors.card }]}>
           {/* Category & Time Row */}
           <View style={styles.metaRow}>
-            <View style={[styles.categoryTag, { backgroundColor: `${categoryColor}15` }]}>
+            <View style={[styles.categoryTag, { backgroundColor: `${categoryColor}20` }]}>
               <Text style={[styles.categoryTagText, { color: categoryColor }]}>{item.category}</Text>
             </View>
-            <Text style={styles.timeText}>{timeAgo} ago</Text>
+            <Text style={[styles.timeText, { color: colors.textMuted }]}>{timeAgo} ago</Text>
           </View>
 
           {/* Title */}
-          <Text style={styles.inshortsTitle}>{item.title}</Text>
+          <Text style={[styles.inshortsTitle, { color: colors.text }]}>{item.title}</Text>
           
-          {/* Description - Full display */}
+          {/* Description */}
           <View style={styles.descriptionContainer}>
-            <Text style={styles.inshortsDescription}>
+            <Text style={[styles.inshortsDescription, { color: colors.textSecondary }]}>
               {item.description}
-              <Text style={styles.readMoreLink} onPress={() => openArticle(item.link)}>
+              <Text style={[styles.readMoreLink, { color: colors.primary }]} onPress={() => openArticle(item.link)}>
                 {' '}Read more →
               </Text>
             </Text>
@@ -222,60 +237,33 @@ export default function HomeScreen() {
     );
   };
 
-  // List Card Component (Original)
-  const renderListCard = ({ item }: { item: Article }) => {
-    const categoryColor = getCategoryColor(item.category);
-    const isBookmarked = bookmarkedIds.has(item.id);
-    return (
-      <TouchableOpacity style={styles.articleCard} onPress={() => openArticle(item.link)} activeOpacity={0.7}>
-        {item.image_url && <Image source={{ uri: item.image_url }} style={styles.articleImage} resizeMode="cover" />}
-        <View style={styles.articleContent}>
-          <View style={styles.articleMeta}>
-            <View style={[styles.categoryBadge, { backgroundColor: `${categoryColor}15` }]}>
-              <Text style={[styles.categoryText, { color: categoryColor }]}>{item.category}</Text>
-            </View>
-            <TouchableOpacity onPress={() => toggleBookmark(item)} style={styles.bookmarkButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Ionicons name={isBookmarked ? 'bookmark' : 'bookmark-outline'} size={22} color={isBookmarked ? '#2563EB' : '#9CA3AF'} />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.articleTitle} numberOfLines={3}>{item.title}</Text>
-          <Text style={styles.articleDescription} numberOfLines={2}>{item.description}</Text>
-          <View style={styles.articleFooter}>
-            <View style={styles.sourceRow}><Ionicons name="newspaper-outline" size={14} color="#9CA3AF" /><Text style={styles.sourceText}>{item.source}</Text></View>
-            <View style={styles.dateRow}><Ionicons name="time-outline" size={14} color="#9CA3AF" /><Text style={styles.dateText}>{formatDate(item.published)}</Text></View>
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
   if (loading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#2563EB" />
-          <Text style={styles.loadingText}>Loading news...</Text>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.textMuted }]}>Loading news...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Verityn</Text>
-        <Text style={styles.headerSubtitle}>European News</Text>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Verityn</Text>
+        <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>European News</Text>
       </View>
 
       {/* Category Tabs */}
-      <View style={styles.categoryTabs}>
+      <View style={[styles.categoryTabs, { borderBottomColor: colors.border }]}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsContainer}>
           <TouchableOpacity 
             style={[styles.tab, activeFilter === 'all' && styles.tabActive]} 
             onPress={() => { setActiveFilter('all'); setCurrentIndex(0); }}
           >
-            <Text style={[styles.tabText, activeFilter === 'all' && styles.tabTextActive]}>My Feed</Text>
+            <Text style={[styles.tabText, { color: colors.textMuted }, activeFilter === 'all' && styles.tabTextActive]}>My Feed</Text>
           </TouchableOpacity>
           {selectedCategories.map((catId) => {
             const category = CATEGORIES.find(c => c.id === catId); 
@@ -287,7 +275,7 @@ export default function HomeScreen() {
                 style={[styles.tab, isActive && styles.tabActive]} 
                 onPress={() => { setActiveFilter(catId); setCurrentIndex(0); }}
               >
-                <Text style={[styles.tabText, isActive && styles.tabTextActive]}>{category.name}</Text>
+                <Text style={[styles.tabText, { color: colors.textMuted }, isActive && styles.tabTextActive]}>{category.name}</Text>
               </TouchableOpacity>
             );
           })}
@@ -296,67 +284,53 @@ export default function HomeScreen() {
 
       {/* Error State */}
       {error && (
-        <View style={styles.errorContainer}>
+        <View style={[styles.errorContainer, { backgroundColor: isDark ? '#3B1818' : '#FEF2F2' }]}>
           <Ionicons name="alert-circle" size={24} color="#DC2626" />
           <Text style={styles.errorText}>{error}</Text>
         </View>
       )}
 
-      {/* Content */}
-      {viewMode === 'cards' ? (
-        // Inshorts-style Cards View
-        <View style={styles.cardsContainer}>
-          {filteredArticles.length > 0 ? (
-            <FlatList
-              ref={flatListRef}
-              data={filteredArticles}
-              renderItem={renderInshortsCard}
-              keyExtractor={(item) => item.id}
-              pagingEnabled
-              showsVerticalScrollIndicator={false}
-              onViewableItemsChanged={onViewableItemsChanged}
-              viewabilityConfig={viewabilityConfig}
-              snapToInterval={CARD_HEIGHT}
-              decelerationRate="fast"
-              refreshControl={
-                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#2563EB" colors={['#2563EB']} />
-              }
-            />
-          ) : (
-            <View style={styles.emptyContainer}>
-              <Ionicons name="newspaper-outline" size={64} color="#D1D5DB" />
-              <Text style={styles.emptyTitle}>No Articles Found</Text>
-              <Text style={styles.emptyText}>{activeFilter !== 'all' ? 'No news in this category.' : 'Pull down to refresh.'}</Text>
-            </View>
-          )}
-          
-          {/* Progress Indicator */}
-          {filteredArticles.length > 0 && (
-            <View style={styles.progressBar}>
-              <Text style={styles.progressText}>{currentIndex + 1} / {filteredArticles.length}</Text>
-            </View>
-          )}
-        </View>
-      ) : (
-        // List View
-        <View style={styles.listContainer}>
-          <FlashList 
-            data={filteredArticles} 
-            renderItem={renderListCard} 
-            estimatedItemSize={280} 
+      {/* Content - Cards View Only */}
+      <View style={styles.cardsContainer}>
+        {filteredArticles.length > 0 ? (
+          <FlatList
+            ref={flatListRef}
+            data={filteredArticles}
+            renderItem={renderInshortsCard}
             keyExtractor={(item) => item.id}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#2563EB" colors={['#2563EB']} />}
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Ionicons name="newspaper-outline" size={64} color="#D1D5DB" />
-                <Text style={styles.emptyTitle}>No Articles Found</Text>
-                <Text style={styles.emptyText}>{activeFilter !== 'all' ? 'No news in this category.' : 'Pull down to refresh.'}</Text>
-              </View>
+            pagingEnabled
+            showsVerticalScrollIndicator={false}
+            onViewableItemsChanged={onViewableItemsChanged}
+            viewabilityConfig={viewabilityConfig}
+            snapToInterval={CARD_HEIGHT}
+            decelerationRate="fast"
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />
             }
-            contentContainerStyle={styles.listContent} 
           />
-        </View>
-      )}
+        ) : (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="newspaper-outline" size={64} color={colors.textMuted} />
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>No Articles Found</Text>
+            <Text style={[styles.emptyText, { color: colors.textMuted }]}>{activeFilter !== 'all' ? 'No news in this category.' : 'Pull down to refresh.'}</Text>
+          </View>
+        )}
+        
+        {/* Progress Indicator */}
+        {filteredArticles.length > 0 && (
+          <View style={styles.progressBar}>
+            <Text style={styles.progressText}>{currentIndex + 1} / {filteredArticles.length}</Text>
+          </View>
+        )}
+        
+        {/* Shake Message */}
+        {shakeMessage && (
+          <View style={styles.shakeMessage}>
+            <Ionicons name="refresh" size={16} color="#fff" />
+            <Text style={styles.shakeMessageText}>{shakeMessage}</Text>
+          </View>
+        )}
+      </View>
     </SafeAreaView>
   );
 }
@@ -515,26 +489,28 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   
-  // List View Styles
-  listContainer: { flex: 1 },
-  listContent: { padding: 16 },
-  articleCard: { backgroundColor: '#FFFFFF', borderRadius: 16, marginBottom: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
-  articleImage: { width: '100%', height: 180, backgroundColor: '#F1F5F9' },
-  articleContent: { padding: 16 },
-  articleMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  categoryBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  categoryText: { fontSize: 12, fontWeight: '600', textTransform: 'capitalize' },
-  bookmarkButton: { padding: 4 },
-  articleTitle: { fontSize: 17, fontWeight: '600', color: '#1E293B', lineHeight: 24, marginBottom: 8 },
-  articleDescription: { fontSize: 14, color: '#64748B', lineHeight: 20, marginBottom: 12 },
-  articleFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  sourceRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  sourceText: { fontSize: 12, color: '#9CA3AF' },
-  dateRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  dateText: { fontSize: 12, color: '#9CA3AF' },
+  // Shake Message
+  shakeMessage: {
+    position: 'absolute',
+    top: 20,
+    left: '50%',
+    transform: [{ translateX: -60 }],
+    backgroundColor: 'rgba(37, 99, 235, 0.9)',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  shakeMessageText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
+  },
   
   // Empty State
   emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 64, paddingHorizontal: 32 },
-  emptyTitle: { fontSize: 20, fontWeight: '600', color: '#1E293B', marginTop: 16, marginBottom: 8 },
-  emptyText: { fontSize: 14, color: '#64748B', textAlign: 'center', lineHeight: 20 },
+  emptyTitle: { fontSize: 20, fontWeight: '600', marginTop: 16, marginBottom: 8 },
+  emptyText: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
 });
