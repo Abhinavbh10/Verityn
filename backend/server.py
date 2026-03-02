@@ -28,6 +28,49 @@ app.add_middleware(
 # Minimum description length (characters) - if shorter, we'll try to fetch more
 MIN_DESCRIPTION_LENGTH = 200
 
+# Stop words to ignore in relevance checking
+STOP_WORDS = {
+    'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with',
+    'by', 'from', 'as', 'is', 'was', 'are', 'were', 'been', 'be', 'have', 'has', 'had',
+    'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must',
+    'shall', 'can', 'need', 'dare', 'ought', 'used', 'it', 'its', 'this', 'that',
+    'these', 'those', 'i', 'you', 'he', 'she', 'we', 'they', 'what', 'which', 'who',
+    'whom', 'whose', 'where', 'when', 'why', 'how', 'all', 'each', 'every', 'both',
+    'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own',
+    'same', 'so', 'than', 'too', 'very', 'just', 'also', 'now', 'here', 'there', 'then',
+    'once', 'if', 'after', 'before', 'while', 'during', 'about', 'into', 'through',
+    'over', 'under', 'again', 'further', 'says', 'said', 'new', 'first', 'last', 'year',
+    'years', 'day', 'days', 'time', 'week', 'month', 'today', 'news', 'report', 'reports'
+}
+
+def is_content_relevant(title: str, description: str, min_matches: int = 2) -> bool:
+    """Check if description content is relevant to the title using keyword matching"""
+    if not title or not description:
+        return False
+    
+    # Extract significant words from title (lowercase, remove punctuation)
+    title_clean = re.sub(r'[^\w\s]', '', title.lower())
+    title_words = set(title_clean.split()) - STOP_WORDS
+    
+    # Extract words from description
+    desc_clean = re.sub(r'[^\w\s]', '', description.lower())
+    desc_words = set(desc_clean.split()) - STOP_WORDS
+    
+    # Find common significant words
+    common_words = title_words & desc_words
+    
+    # Check for partial matches (e.g., "Trump" matches "Trump's")
+    partial_matches = 0
+    for title_word in title_words:
+        if len(title_word) >= 4:  # Only check words with 4+ chars
+            for desc_word in desc_words:
+                if title_word in desc_word or desc_word in title_word:
+                    partial_matches += 1
+                    break
+    
+    total_matches = len(common_words) + partial_matches
+    return total_matches >= min_matches
+
 # Models
 class NewsArticle(BaseModel):
     id: str
@@ -363,10 +406,15 @@ async def fetch_rss_feed(url: str, source: str, category: str) -> List[NewsArtic
                 if img_url and not isinstance(img_url, Exception):
                     entries_data[idx]['image_url'] = img_url
         
-        # Create articles - ONLY include articles with high-quality images
+        # Create articles - ONLY include articles with high-quality images AND relevant content
         for entry in entries_data:
             # Skip articles without images
             if not entry['image_url']:
+                continue
+            
+            # Validate content relevance
+            if not is_content_relevant(entry['title'], entry['description']):
+                print(f"Skipping irrelevant content: {entry['title'][:50]}...")
                 continue
                 
             # Ensure description has minimum length with padding if needed
