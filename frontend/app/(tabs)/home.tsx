@@ -482,12 +482,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  readingTime: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  readingTimeText: {
+  timeText: {
     fontSize: 12,
     color: '#9CA3AF',
   },
