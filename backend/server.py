@@ -139,6 +139,103 @@ class NewsResponse(BaseModel):
     total: int
     category: str
 
+# European Regional RSS Feeds - for location-based news
+REGIONAL_RSS_FEEDS = {
+    # United Kingdom
+    "uk": [
+        {"url": "http://feeds.bbci.co.uk/news/england/rss.xml", "source": "BBC England"},
+        {"url": "http://feeds.bbci.co.uk/news/scotland/rss.xml", "source": "BBC Scotland"},
+        {"url": "http://feeds.bbci.co.uk/news/wales/rss.xml", "source": "BBC Wales"},
+        {"url": "http://feeds.bbci.co.uk/news/northern_ireland/rss.xml", "source": "BBC N. Ireland"},
+        {"url": "https://www.theguardian.com/uk-news/rss", "source": "The Guardian UK"},
+    ],
+    # Germany
+    "germany": [
+        {"url": "https://rss.dw.com/rdf/rss-en-ger", "source": "DW Germany"},
+        {"url": "https://www.thelocal.de/feed", "source": "The Local DE"},
+    ],
+    # France
+    "france": [
+        {"url": "https://www.thelocal.fr/feed", "source": "The Local FR"},
+        {"url": "https://www.france24.com/en/rss", "source": "France 24"},
+    ],
+    # Spain
+    "spain": [
+        {"url": "https://www.thelocal.es/feed", "source": "The Local ES"},
+        {"url": "https://english.elpais.com/rss/elpais/inenglish.xml", "source": "El Pais English"},
+    ],
+    # Italy
+    "italy": [
+        {"url": "https://www.thelocal.it/feed", "source": "The Local IT"},
+    ],
+    # Netherlands
+    "netherlands": [
+        {"url": "https://www.dutchnews.nl/feed/", "source": "Dutch News"},
+    ],
+    # Ireland
+    "ireland": [
+        {"url": "https://www.irishtimes.com/rss/news/ireland.xml", "source": "Irish Times"},
+        {"url": "http://feeds.bbci.co.uk/news/northern_ireland/rss.xml", "source": "BBC N. Ireland"},
+    ],
+    # Switzerland
+    "switzerland": [
+        {"url": "https://www.thelocal.ch/feed", "source": "The Local CH"},
+        {"url": "https://www.swissinfo.ch/eng/news/rss", "source": "SwissInfo"},
+    ],
+    # Austria
+    "austria": [
+        {"url": "https://www.thelocal.at/feed", "source": "The Local AT"},
+    ],
+    # Norway
+    "norway": [
+        {"url": "https://www.thelocal.no/feed", "source": "The Local NO"},
+    ],
+    # Sweden
+    "sweden": [
+        {"url": "https://www.thelocal.se/feed", "source": "The Local SE"},
+    ],
+    # Denmark
+    "denmark": [
+        {"url": "https://www.thelocal.dk/feed", "source": "The Local DK"},
+    ],
+}
+
+# City keywords for filtering
+CITY_KEYWORDS = {
+    "london": ["london", "westminster", "city of london", "greater london"],
+    "manchester": ["manchester", "greater manchester"],
+    "birmingham": ["birmingham", "west midlands"],
+    "edinburgh": ["edinburgh", "scottish capital"],
+    "glasgow": ["glasgow"],
+    "liverpool": ["liverpool", "merseyside"],
+    "berlin": ["berlin"],
+    "munich": ["munich", "münchen", "bavaria"],
+    "frankfurt": ["frankfurt"],
+    "hamburg": ["hamburg"],
+    "paris": ["paris", "ile-de-france"],
+    "lyon": ["lyon"],
+    "marseille": ["marseille"],
+    "madrid": ["madrid"],
+    "barcelona": ["barcelona", "catalonia", "catalunya"],
+    "rome": ["rome", "roma"],
+    "milan": ["milan", "milano"],
+    "amsterdam": ["amsterdam"],
+    "rotterdam": ["rotterdam"],
+    "dublin": ["dublin"],
+    "zurich": ["zurich", "zürich"],
+    "geneva": ["geneva", "genève"],
+    "vienna": ["vienna", "wien"],
+    "stockholm": ["stockholm"],
+    "oslo": ["oslo"],
+    "copenhagen": ["copenhagen", "københavn"],
+    "helsinki": ["helsinki"],
+    "warsaw": ["warsaw", "warszawa"],
+    "prague": ["prague", "praha"],
+    "athens": ["athens", "athina"],
+    "lisbon": ["lisbon", "lisboa"],
+    "brussels": ["brussels", "bruxelles"],
+}
+
 # European RSS Feed Sources organized by category
 RSS_FEEDS = {
     "politics": [
@@ -671,6 +768,245 @@ async def search_news(
         "query": q,
         "categories_searched": category_list
     }
+
+
+@app.get("/api/location-news")
+async def get_location_news(
+    countries: str = Query(..., description="Comma-separated list of country IDs (e.g., uk,germany,france)"),
+    cities: Optional[str] = Query(default=None, description="Comma-separated list of cities to filter by"),
+    limit: int = Query(default=50, le=100)
+):
+    """Get news filtered by European countries and optionally cities"""
+    country_list = [c.strip().lower() for c in countries.split(',')]
+    city_list = [c.strip().lower() for c in cities.split(',')] if cities else []
+    
+    # Validate countries
+    valid_countries = [c for c in country_list if c in REGIONAL_RSS_FEEDS]
+    
+    if not valid_countries:
+        # Fallback: try to get general European news and filter by country name
+        all_articles = []
+        tasks = [get_news_by_category(cat) for cat in ['politics', 'business', 'technology']]
+        results = await asyncio.gather(*tasks)
+        for result in results:
+            all_articles.extend(result)
+        
+        # Filter by country keywords
+        filtered = []
+        seen_ids = set()
+        for article in all_articles:
+            if article.id in seen_ids:
+                continue
+            text = f"{article.title} {article.description}".lower()
+            for country_id in country_list:
+                if country_id in text:
+                    seen_ids.add(article.id)
+                    filtered.append(article)
+                    break
+        
+        filtered.sort(key=lambda x: x.published, reverse=True)
+        return {
+            "articles": filtered[:limit],
+            "total": len(filtered),
+            "countries": country_list,
+            "cities": city_list,
+            "source": "keyword_filter"
+        }
+    
+    # Fetch from regional feeds
+    all_articles = []
+    
+    async def fetch_regional_feed(feed_info: dict, country_id: str):
+        """Fetch articles from a regional RSS feed"""
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(feed_info['url'], headers={
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                })
+                response.raise_for_status()
+                feed = feedparser.parse(response.text)
+                
+                articles = []
+                for entry in feed.entries[:20]:
+                    try:
+                        title = entry.get('title', '').strip()
+                        description = entry.get('summary', entry.get('description', '')).strip()
+                        link = entry.get('link', '')
+                        
+                        # Clean HTML from description
+                        if description:
+                            soup = BeautifulSoup(description, 'html.parser')
+                            description = soup.get_text(separator=' ', strip=True)
+                            description = clean_description(description)
+                        
+                        # Parse date
+                        published = entry.get('published', entry.get('updated', ''))
+                        try:
+                            if hasattr(entry, 'published_parsed') and entry.published_parsed:
+                                pub_datetime = datetime(*entry.published_parsed[:6])
+                                published = pub_datetime.isoformat()
+                        except:
+                            published = datetime.now().isoformat()
+                        
+                        # Get image
+                        image_url = None
+                        if 'media_content' in entry:
+                            for media in entry.media_content:
+                                if 'url' in media:
+                                    image_url = media['url']
+                                    break
+                        if not image_url and 'media_thumbnail' in entry:
+                            for thumb in entry.media_thumbnail:
+                                if 'url' in thumb:
+                                    image_url = thumb['url']
+                                    break
+                        if not image_url and 'enclosures' in entry:
+                            for enc in entry.enclosures:
+                                if enc.get('type', '').startswith('image'):
+                                    image_url = enc.get('url')
+                                    break
+                        
+                        article_id = hashlib.md5(f"{title}{link}".encode()).hexdigest()
+                        
+                        articles.append(NewsArticle(
+                            id=article_id,
+                            title=title,
+                            description=description[:500] if description else "No description available.",
+                            link=link,
+                            published=published,
+                            source=feed_info['source'],
+                            category=country_id,
+                            image_url=image_url
+                        ))
+                    except Exception as e:
+                        continue
+                
+                return articles
+        except Exception as e:
+            print(f"Error fetching regional feed {feed_info['url']}: {e}")
+            return []
+    
+    # Create tasks for all regional feeds
+    tasks = []
+    for country_id in valid_countries:
+        for feed_info in REGIONAL_RSS_FEEDS.get(country_id, []):
+            tasks.append(fetch_regional_feed(feed_info, country_id))
+    
+    # Execute all tasks
+    results = await asyncio.gather(*tasks)
+    for result in results:
+        all_articles.extend(result)
+    
+    # Also search general feeds for country/city mentions
+    general_tasks = [get_news_by_category(cat) for cat in ['politics', 'business']]
+    general_results = await asyncio.gather(*general_tasks)
+    general_articles = []
+    for result in general_results:
+        general_articles.extend(result)
+    
+    # Filter general articles by location keywords
+    seen_ids = set(a.id for a in all_articles)
+    for article in general_articles:
+        if article.id in seen_ids:
+            continue
+        text = f"{article.title} {article.description}".lower()
+        
+        # Check country match
+        country_match = False
+        for country_id in valid_countries:
+            if country_id in text:
+                country_match = True
+                break
+        
+        # Check city match if cities specified
+        city_match = not city_list  # If no cities specified, don't filter by city
+        if city_list:
+            for city in city_list:
+                city_keywords = CITY_KEYWORDS.get(city.lower(), [city.lower()])
+                for keyword in city_keywords:
+                    if keyword in text:
+                        city_match = True
+                        break
+                if city_match:
+                    break
+        
+        if country_match or city_match:
+            seen_ids.add(article.id)
+            all_articles.append(article)
+    
+    # If cities are specified, filter all articles by city
+    if city_list:
+        city_filtered = []
+        for article in all_articles:
+            text = f"{article.title} {article.description}".lower()
+            for city in city_list:
+                city_keywords = CITY_KEYWORDS.get(city.lower(), [city.lower()])
+                for keyword in city_keywords:
+                    if keyword in text:
+                        city_filtered.append(article)
+                        break
+                else:
+                    continue
+                break
+        # If city filtering returns too few results, include country-level articles
+        if len(city_filtered) >= 5:
+            all_articles = city_filtered
+    
+    # Remove duplicates and sort
+    unique_articles = []
+    seen_ids = set()
+    for article in all_articles:
+        if article.id not in seen_ids:
+            seen_ids.add(article.id)
+            unique_articles.append(article)
+    
+    unique_articles.sort(key=lambda x: x.published, reverse=True)
+    
+    return {
+        "articles": unique_articles[:limit],
+        "total": len(unique_articles),
+        "countries": valid_countries,
+        "cities": city_list,
+        "source": "regional_feeds"
+    }
+
+
+@app.get("/api/locations/available")
+async def get_available_locations():
+    """Get list of available European countries and their cities"""
+    locations = []
+    country_data = {
+        "uk": {"name": "United Kingdom", "flag": "🇬🇧", "cities": ["London", "Manchester", "Birmingham", "Edinburgh", "Glasgow", "Liverpool", "Bristol", "Leeds"]},
+        "germany": {"name": "Germany", "flag": "🇩🇪", "cities": ["Berlin", "Munich", "Frankfurt", "Hamburg", "Cologne", "Stuttgart", "Düsseldorf", "Leipzig"]},
+        "france": {"name": "France", "flag": "🇫🇷", "cities": ["Paris", "Lyon", "Marseille", "Toulouse", "Nice", "Bordeaux", "Strasbourg", "Lille"]},
+        "spain": {"name": "Spain", "flag": "🇪🇸", "cities": ["Madrid", "Barcelona", "Valencia", "Seville", "Bilbao", "Malaga", "Zaragoza"]},
+        "italy": {"name": "Italy", "flag": "🇮🇹", "cities": ["Rome", "Milan", "Naples", "Turin", "Florence", "Venice", "Bologna", "Palermo"]},
+        "netherlands": {"name": "Netherlands", "flag": "🇳🇱", "cities": ["Amsterdam", "Rotterdam", "The Hague", "Utrecht", "Eindhoven"]},
+        "belgium": {"name": "Belgium", "flag": "🇧🇪", "cities": ["Brussels", "Antwerp", "Ghent", "Bruges", "Liège"]},
+        "switzerland": {"name": "Switzerland", "flag": "🇨🇭", "cities": ["Zurich", "Geneva", "Basel", "Bern", "Lausanne"]},
+        "austria": {"name": "Austria", "flag": "🇦🇹", "cities": ["Vienna", "Salzburg", "Innsbruck", "Graz", "Linz"]},
+        "portugal": {"name": "Portugal", "flag": "🇵🇹", "cities": ["Lisbon", "Porto", "Braga", "Faro", "Coimbra"]},
+        "ireland": {"name": "Ireland", "flag": "🇮🇪", "cities": ["Dublin", "Cork", "Galway", "Limerick", "Waterford"]},
+        "sweden": {"name": "Sweden", "flag": "🇸🇪", "cities": ["Stockholm", "Gothenburg", "Malmö", "Uppsala"]},
+        "norway": {"name": "Norway", "flag": "🇳🇴", "cities": ["Oslo", "Bergen", "Trondheim", "Stavanger"]},
+        "denmark": {"name": "Denmark", "flag": "🇩🇰", "cities": ["Copenhagen", "Aarhus", "Odense", "Aalborg"]},
+        "finland": {"name": "Finland", "flag": "🇫🇮", "cities": ["Helsinki", "Espoo", "Tampere", "Turku"]},
+        "poland": {"name": "Poland", "flag": "🇵🇱", "cities": ["Warsaw", "Krakow", "Gdansk", "Wroclaw", "Poznan"]},
+        "czechia": {"name": "Czech Republic", "flag": "🇨🇿", "cities": ["Prague", "Brno", "Ostrava", "Pilsen"]},
+        "greece": {"name": "Greece", "flag": "🇬🇷", "cities": ["Athens", "Thessaloniki", "Patras", "Heraklion"]},
+    }
+    
+    for country_id, data in country_data.items():
+        locations.append({
+            "id": country_id,
+            "name": data["name"],
+            "flag": data["flag"],
+            "cities": data["cities"],
+            "has_regional_feeds": country_id in REGIONAL_RSS_FEEDS
+        })
+    
+    return {"locations": locations}
+
 
 if __name__ == "__main__":
     import uvicorn
