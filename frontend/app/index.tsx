@@ -5,6 +5,8 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { getPreferences, savePreferences as savePrefs } from '../src/utils/storage';
+import { hasGDPRConsent } from '../src/utils/gdpr';
+import GDPRConsentModal from '../src/components/GDPRConsentModal';
 
 interface Category {
   id: string;
@@ -28,6 +30,7 @@ export default function WelcomeScreen() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(true);
+  const [showGDPRModal, setShowGDPRModal] = useState(false);
 
   useEffect(() => {
     checkExistingPreferences();
@@ -35,6 +38,16 @@ export default function WelcomeScreen() {
 
   const checkExistingPreferences = async () => {
     try {
+      // First check GDPR consent
+      const hasConsent = await hasGDPRConsent();
+      if (!hasConsent) {
+        setShowGDPRModal(true);
+        setChecking(false);
+        setLoading(false);
+        return;
+      }
+      
+      // Then check if user has already completed onboarding
       const preferences = await getPreferences();
       if (preferences && preferences.categories && preferences.categories.length > 0) {
         router.replace('/(tabs)/home');
@@ -45,6 +58,19 @@ export default function WelcomeScreen() {
     }
     setChecking(false);
     setLoading(false);
+  };
+
+  const handleGDPRAccept = async () => {
+    setShowGDPRModal(false);
+    // After GDPR consent, check if user already has preferences
+    try {
+      const preferences = await getPreferences();
+      if (preferences && preferences.categories && preferences.categories.length > 0) {
+        router.replace('/(tabs)/home');
+      }
+    } catch (error) {
+      console.error('Error checking preferences after GDPR:', error);
+    }
   };
 
   const toggleCategory = (categoryId: string) => {
@@ -80,6 +106,9 @@ export default function WelcomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* GDPR Consent Modal */}
+      <GDPRConsentModal visible={showGDPRModal} onAccept={handleGDPRAccept} />
+      
       <ScrollView 
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}

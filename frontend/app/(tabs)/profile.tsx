@@ -11,6 +11,7 @@ import { requestNotificationPermissions, getNotificationSettings, saveNotificati
 import { getPreferences, savePreferences, clearPreferences } from '../../src/utils/storage';
 import { useTheme, ThemeMode } from '../../src/utils/theme';
 import { getOfflineArticleCount, clearAllOfflineArticles } from '../../src/utils/offline';
+import { withdrawConsentAndDeleteData, getStoredDataSummary } from '../../src/utils/gdpr';
 
 interface Category { id: string; name: string; icon: string; color: string; }
 
@@ -222,6 +223,94 @@ export default function ProfileScreen() {
         <View style={styles.resetSection}>
           <TouchableOpacity style={styles.resetButton} onPress={resetPreferences} activeOpacity={0.7}>
             <Ionicons name="refresh-circle" size={20} color="#DC2626" /><Text style={styles.resetButtonText}>Reset All Preferences</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Privacy & Data Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, dynamicStyles.text]}>Privacy & Data</Text>
+          <Text style={[styles.sectionDescription, dynamicStyles.textMuted]}>Manage your data and privacy settings under GDPR</Text>
+          
+          <TouchableOpacity 
+            style={[styles.settingRow, dynamicStyles.surface]}
+            onPress={() => router.push('/privacy')}
+            data-testid="privacy-policy-btn"
+          >
+            <View style={styles.settingInfo}>
+              <View style={[styles.settingIcon, { backgroundColor: '#F0FDF4' }]}>
+                <Ionicons name="document-text" size={20} color="#16A34A" />
+              </View>
+              <View>
+                <Text style={[styles.settingLabel, dynamicStyles.text]}>Privacy Policy</Text>
+                <Text style={[styles.settingDescription, dynamicStyles.textMuted]}>Read our privacy policy</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.settingRow, dynamicStyles.surface]}
+            onPress={async () => {
+              const summary = await getStoredDataSummary();
+              Alert.alert(
+                'Your Stored Data',
+                summary.length > 0 
+                  ? `The following data is stored locally on your device:\n\n${summary.map(s => `• ${s}`).join('\n')}`
+                  : 'No data is currently stored on your device.',
+                [{ text: 'OK' }]
+              );
+            }}
+            data-testid="view-data-btn"
+          >
+            <View style={styles.settingInfo}>
+              <View style={[styles.settingIcon, { backgroundColor: '#EFF6FF' }]}>
+                <Ionicons name="folder-open" size={20} color="#2563EB" />
+              </View>
+              <View>
+                <Text style={[styles.settingLabel, dynamicStyles.text]}>View My Data</Text>
+                <Text style={[styles.settingDescription, dynamicStyles.textMuted]}>See what's stored on your device</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.settingRow, dynamicStyles.surface]}
+            onPress={() => {
+              Alert.alert(
+                'Delete All My Data',
+                'This will permanently delete all your data including:\n\n• News preferences\n• Bookmarked articles\n• Custom keywords\n• Location preferences\n• Offline articles\n• Theme settings\n\nYou will be returned to the welcome screen.\n\nThis action cannot be undone.',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  { 
+                    text: 'Delete All Data', 
+                    style: 'destructive', 
+                    onPress: async () => {
+                      const success = await withdrawConsentAndDeleteData();
+                      if (success) {
+                        Alert.alert('Data Deleted', 'All your data has been removed.', [
+                          { text: 'OK', onPress: () => router.replace('/') }
+                        ]);
+                      } else {
+                        Alert.alert('Error', 'Failed to delete data. Please try again.');
+                      }
+                    } 
+                  },
+                ]
+              );
+            }}
+            data-testid="delete-data-btn"
+          >
+            <View style={styles.settingInfo}>
+              <View style={[styles.settingIcon, { backgroundColor: '#FEF2F2' }]}>
+                <Ionicons name="trash" size={20} color="#DC2626" />
+              </View>
+              <View>
+                <Text style={[styles.settingLabel, dynamicStyles.text]}>Delete My Data</Text>
+                <Text style={[styles.settingDescription, dynamicStyles.textMuted]}>Remove all stored data (GDPR right to erasure)</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
           </TouchableOpacity>
         </View>
 

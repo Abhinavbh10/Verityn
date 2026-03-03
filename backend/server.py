@@ -251,12 +251,16 @@ RSS_FEEDS = {
         {"url": "https://rss.dw.com/rdf/rss-en-bus", "source": "DW Business"},
         {"url": "https://feeds.skynews.com/feeds/rss/business.xml", "source": "Sky News Business"},
         {"url": "https://www.ft.com/rss/home/uk", "source": "Financial Times"},
+        {"url": "https://www.politico.eu/section/economy-jobs/feed/", "source": "Politico EU Economy"},
+        {"url": "https://www.euronews.com/rss?level=theme&name=business", "source": "Euronews Business"},
     ],
     "technology": [
         {"url": "http://feeds.bbci.co.uk/news/technology/rss.xml", "source": "BBC Technology"},
         {"url": "https://www.theguardian.com/uk/technology/rss", "source": "The Guardian Tech"},
         {"url": "https://rss.dw.com/rdf/rss-en-sci", "source": "DW Science & Tech"},
         {"url": "https://www.techradar.com/rss", "source": "TechRadar"},
+        {"url": "https://www.politico.eu/section/technology/feed/", "source": "Politico EU Tech"},
+        {"url": "https://www.euronews.com/rss?level=theme&name=next", "source": "Euronews Tech"},
     ],
     "sports": [
         {"url": "http://feeds.bbci.co.uk/sport/rss.xml", "source": "BBC Sport"},
