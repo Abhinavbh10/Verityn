@@ -13,11 +13,12 @@ interface Category {
   color: string;
 }
 
+// European Elegance theme colors
 const CATEGORIES: Category[] = [
-  { id: 'politics', name: 'Politics', icon: 'business', color: '#2563EB' },
-  { id: 'business', name: 'Business', icon: 'briefcase', color: '#059669' },
+  { id: 'politics', name: 'Politics', icon: 'business', color: '#1E3A5F' },      // Navy
+  { id: 'business', name: 'Business', icon: 'briefcase', color: '#B45309' },     // Amber (primary)
   { id: 'technology', name: 'Technology', icon: 'hardware-chip', color: '#7C3AED' },
-  { id: 'sports', name: 'Sports', icon: 'trophy', color: '#D97706' },
+  { id: 'sports', name: 'Sports', icon: 'trophy', color: '#059669' },            // Emerald
   { id: 'entertainment', name: 'Entertainment', icon: 'film', color: '#DB2777' },
   { id: 'health', name: 'Health', icon: 'heart', color: '#DC2626' },
   { id: 'science', name: 'Science', icon: 'flask', color: '#0891B2' },
@@ -90,13 +91,13 @@ export default function WelcomeScreen() {
             <Svg width={56} height={56} viewBox="0 0 100 100">
               <Defs>
                 <LinearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <Stop offset="0%" stopColor="#2563EB" />
-                  <Stop offset="100%" stopColor="#1D4ED8" />
+                  <Stop offset="0%" stopColor="#B45309" />
+                  <Stop offset="100%" stopColor="#92400E" />
                 </LinearGradient>
               </Defs>
               <Circle cx="50" cy="50" r="45" fill="none" stroke="url(#logoGradient)" strokeWidth="3" />
               <Path d="M30 35 L50 70 L70 35" fill="none" stroke="url(#logoGradient)" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
-              <Circle cx="50" cy="20" r="4" fill="#2563EB" />
+              <Circle cx="50" cy="20" r="4" fill="#B45309" />
             </Svg>
           </View>
           <Text style={styles.title}>Verityn</Text>
@@ -175,44 +176,47 @@ export default function WelcomeScreen() {
   );
 }
 
+// European Elegance styles
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  container: { flex: 1, backgroundColor: '#FDF8F3' },  // Warm white background
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   scrollView: { flex: 1 },
   scrollContent: { padding: 24, paddingBottom: 48 },
   header: { alignItems: 'center', marginBottom: 32, marginTop: 16 },
   logoContainer: {
-    width: 80, height: 80, borderRadius: 20, backgroundColor: '#F0F7FF',
+    width: 80, height: 80, borderRadius: 20, backgroundColor: '#FEF3C7',  // Amber light
     justifyContent: 'center', alignItems: 'center', marginBottom: 16,
   },
-  title: { fontSize: 32, fontWeight: '700', color: '#1E293B', marginBottom: 8 },
-  subtitle: { fontSize: 16, color: '#64748B' },
+  title: { fontSize: 32, fontWeight: '700', color: '#292524', marginBottom: 8, letterSpacing: -0.5 },
+  subtitle: { fontSize: 16, color: '#78716C', letterSpacing: 0.3 },
   welcomeSection: { marginBottom: 32 },
-  welcomeTitle: { fontSize: 24, fontWeight: '600', color: '#1E293B', marginBottom: 8 },
-  welcomeText: { fontSize: 15, color: '#64748B', lineHeight: 22 },
+  welcomeTitle: { fontSize: 24, fontWeight: '600', color: '#292524', marginBottom: 8 },
+  welcomeText: { fontSize: 15, color: '#57534E', lineHeight: 24 },
   categoriesSection: { marginBottom: 24 },
-  sectionTitle: { fontSize: 18, fontWeight: '600', color: '#1E293B', marginBottom: 16 },
+  sectionTitle: { fontSize: 18, fontWeight: '600', color: '#292524', marginBottom: 16 },
   categoriesGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   categoryCard: {
-    width: '48%', backgroundColor: '#F8FAFC', borderRadius: 16, padding: 16,
-    marginBottom: 12, borderWidth: 2, borderColor: 'transparent', position: 'relative',
+    width: '48%', backgroundColor: '#FFFFFF', borderRadius: 18, padding: 16,
+    marginBottom: 12, borderWidth: 2, borderColor: '#E7E5E4', position: 'relative',
+    shadowColor: '#44403C', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2,
   },
   iconContainer: {
     width: 52, height: 52, borderRadius: 14, justifyContent: 'center',
     alignItems: 'center', marginBottom: 12,
   },
-  categoryName: { fontSize: 15, fontWeight: '600', color: '#374151' },
+  categoryName: { fontSize: 15, fontWeight: '600', color: '#57534E' },
   checkmark: {
     position: 'absolute', top: 12, right: 12, width: 24, height: 24,
     borderRadius: 12, justifyContent: 'center', alignItems: 'center',
   },
-  selectionInfo: { textAlign: 'center', fontSize: 14, color: '#9CA3AF', marginBottom: 24 },
+  selectionInfo: { textAlign: 'center', fontSize: 14, color: '#A8A29E', marginBottom: 24 },
   continueButton: {
-    backgroundColor: '#2563EB', borderRadius: 14, paddingVertical: 16,
+    backgroundColor: '#B45309', borderRadius: 14, paddingVertical: 16,  // Amber primary
     flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8,
+    shadowColor: '#B45309', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
   },
-  continueButtonDisabled: { backgroundColor: '#D1D5DB' },
-  continueButtonText: { fontSize: 17, fontWeight: '600', color: '#fff' },
+  continueButtonDisabled: { backgroundColor: '#D6D3D1', shadowOpacity: 0 },
+  continueButtonText: { fontSize: 17, fontWeight: '600', color: '#fff', letterSpacing: 0.3 },
   skipButton: { marginTop: 16, paddingVertical: 12, alignItems: 'center' },
-  skipButtonText: { fontSize: 15, color: '#2563EB', fontWeight: '500' },
+  skipButtonText: { fontSize: 15, color: '#B45309', fontWeight: '500' },  // Amber primary
 });

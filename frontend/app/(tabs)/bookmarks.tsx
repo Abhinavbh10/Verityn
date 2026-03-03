@@ -8,9 +8,10 @@ import * as WebBrowser from 'expo-web-browser';
 import { useFocusEffect } from 'expo-router';
 import { getBookmarks, removeBookmark, clearAllBookmarks, BookmarkedArticle } from '../../src/utils/bookmarks';
 
+// European Elegance theme colors
 const CATEGORIES = [
-  { id: 'politics', color: '#2563EB' }, { id: 'business', color: '#059669' },
-  { id: 'technology', color: '#7C3AED' }, { id: 'sports', color: '#D97706' },
+  { id: 'politics', color: '#1E3A5F' }, { id: 'business', color: '#B45309' },
+  { id: 'technology', color: '#7C3AED' }, { id: 'sports', color: '#059669' },
   { id: 'entertainment', color: '#DB2777' }, { id: 'health', color: '#DC2626' },
   { id: 'science', color: '#0891B2' },
 ];
@@ -79,30 +80,31 @@ export default function BookmarksScreen() {
   );
 }
 
+// European Elegance styles
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
-  headerTitle: { fontSize: 28, fontWeight: '700', color: '#1E293B' },
-  headerSubtitle: { fontSize: 14, color: '#64748B', marginTop: 2 },
+  container: { flex: 1, backgroundColor: '#FDF8F3' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#E7E5E4' },
+  headerTitle: { fontSize: 28, fontWeight: '700', color: '#292524', letterSpacing: -0.5 },
+  headerSubtitle: { fontSize: 14, color: '#78716C', marginTop: 2 },
   clearButton: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FEF2F2', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10 },
   clearButtonText: { color: '#DC2626', fontSize: 14, fontWeight: '500' },
   listContainer: { flex: 1 },
   listContent: { padding: 16 },
-  articleCard: { backgroundColor: '#FFFFFF', borderRadius: 14, marginBottom: 12, padding: 14, borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  articleCard: { backgroundColor: '#FFFFFF', borderRadius: 16, marginBottom: 12, padding: 14, borderWidth: 1, borderColor: '#E7E5E4', shadowColor: '#44403C', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
   articleRow: { flexDirection: 'row', gap: 12 },
-  articleImage: { width: 80, height: 80, borderRadius: 10, backgroundColor: '#F1F5F9' },
+  articleImage: { width: 80, height: 80, borderRadius: 12, backgroundColor: '#E7E5E4' },
   articleContent: { flex: 1, justifyContent: 'center' },
   categoryBadge: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, marginBottom: 6 },
   categoryText: { fontSize: 10, fontWeight: '600', textTransform: 'capitalize' },
-  articleTitle: { fontSize: 14, fontWeight: '600', color: '#1E293B', lineHeight: 20, marginBottom: 4 },
-  sourceText: { fontSize: 12, color: '#9CA3AF' },
+  articleTitle: { fontSize: 14, fontWeight: '600', color: '#292524', lineHeight: 20, marginBottom: 4 },
+  sourceText: { fontSize: 12, color: '#A8A29E' },
   removeButton: { padding: 8, alignSelf: 'flex-start' },
-  articleFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
+  articleFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#E7E5E4' },
   dateRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  dateText: { fontSize: 12, color: '#64748B' },
+  dateText: { fontSize: 12, color: '#78716C' },
   readRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  readText: { fontSize: 12, color: '#9CA3AF' },
+  readText: { fontSize: 12, color: '#A8A29E' },
   emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 64, paddingHorizontal: 32 },
-  emptyTitle: { fontSize: 20, fontWeight: '600', color: '#1E293B', marginTop: 16, marginBottom: 8 },
-  emptyText: { fontSize: 14, color: '#64748B', textAlign: 'center' },
+  emptyTitle: { fontSize: 20, fontWeight: '600', color: '#292524', marginTop: 16, marginBottom: 8 },
+  emptyText: { fontSize: 14, color: '#78716C', textAlign: 'center' },
 });

@@ -14,11 +14,12 @@ import { getOfflineArticleCount, clearAllOfflineArticles } from '../../src/utils
 
 interface Category { id: string; name: string; icon: string; color: string; }
 
+// European Elegance theme colors
 const CATEGORIES: Category[] = [
-  { id: 'politics', name: 'Politics', icon: 'business', color: '#2563EB' },
-  { id: 'business', name: 'Business', icon: 'briefcase', color: '#059669' },
+  { id: 'politics', name: 'Politics', icon: 'business', color: '#1E3A5F' },      // Navy
+  { id: 'business', name: 'Business', icon: 'briefcase', color: '#B45309' },     // Amber (primary)
   { id: 'technology', name: 'Technology', icon: 'hardware-chip', color: '#7C3AED' },
-  { id: 'sports', name: 'Sports', icon: 'trophy', color: '#D97706' },
+  { id: 'sports', name: 'Sports', icon: 'trophy', color: '#059669' },            // Emerald
   { id: 'entertainment', name: 'Entertainment', icon: 'film', color: '#DB2777' },
   { id: 'health', name: 'Health', icon: 'heart', color: '#DC2626' },
   { id: 'science', name: 'Science', icon: 'flask', color: '#0891B2' },
@@ -234,6 +235,7 @@ export default function ProfileScreen() {
   );
 }
 
+// European Elegance styles
 const styles = StyleSheet.create({
   container: { flex: 1 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
@@ -241,7 +243,7 @@ const styles = StyleSheet.create({
   scrollContent: { padding: 20, paddingBottom: 40 },
   header: { alignItems: 'center', marginBottom: 28, paddingTop: 8 },
   profileIcon: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
-  headerTitle: { fontSize: 24, fontWeight: '700', marginBottom: 4 },
+  headerTitle: { fontSize: 24, fontWeight: '700', marginBottom: 4, letterSpacing: -0.3 },
   headerSubtitle: { fontSize: 15 },
   section: { marginBottom: 24 },
   sectionTitle: { fontSize: 18, fontWeight: '600', marginBottom: 6 },
@@ -249,22 +251,22 @@ const styles = StyleSheet.create({
   
   // Theme options
   themeOptions: { flexDirection: 'row', justifyContent: 'space-between', gap: 10 },
-  themeOption: { flex: 1, alignItems: 'center', paddingVertical: 16, borderRadius: 12, borderWidth: 2, position: 'relative' },
+  themeOption: { flex: 1, alignItems: 'center', paddingVertical: 16, borderRadius: 14, borderWidth: 2, position: 'relative' },
   themeLabel: { fontSize: 13, fontWeight: '500', marginTop: 8 },
   themeCheck: { position: 'absolute', top: 8, right: 8, width: 18, height: 18, borderRadius: 9, justifyContent: 'center', alignItems: 'center' },
   
   // Settings
-  settingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderRadius: 12, marginBottom: 10, borderWidth: 1 },
+  settingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderRadius: 14, marginBottom: 10, borderWidth: 1 },
   settingInfo: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
-  settingIcon: { width: 40, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  settingIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   settingLabel: { fontSize: 15, fontWeight: '600' },
   settingDescription: { fontSize: 12, marginTop: 2 },
-  clearButton: { backgroundColor: '#FEE2E2', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6 },
+  clearButton: { backgroundColor: '#FEE2E2', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
   clearButtonText: { fontSize: 13, color: '#DC2626', fontWeight: '500' },
   
   // Categories
   categoriesGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  categoryCard: { width: '48%', borderRadius: 14, padding: 14, marginBottom: 10, borderWidth: 2, position: 'relative' },
+  categoryCard: { width: '48%', borderRadius: 16, padding: 14, marginBottom: 10, borderWidth: 2, position: 'relative' },
   iconContainer: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
   categoryName: { fontSize: 14, fontWeight: '600' },
   checkmark: { position: 'absolute', top: 10, right: 10, width: 20, height: 20, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
@@ -272,8 +274,8 @@ const styles = StyleSheet.create({
   // Actions
   summaryContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 20 },
   summaryText: { fontSize: 14 },
-  saveButton: { backgroundColor: '#2563EB', borderRadius: 14, paddingVertical: 16, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, marginBottom: 16 },
-  saveButtonDisabled: { backgroundColor: '#D1D5DB' },
+  saveButton: { backgroundColor: '#B45309', borderRadius: 14, paddingVertical: 16, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, marginBottom: 16, shadowColor: '#B45309', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 8, elevation: 4 },
+  saveButtonDisabled: { backgroundColor: '#D6D3D1', shadowOpacity: 0 },
   saveButtonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
   resetSection: { alignItems: 'center', marginTop: 8, marginBottom: 32 },
   resetButton: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12, paddingHorizontal: 16 },

@@ -16,42 +16,46 @@ interface ThemeColors {
   border: string;
   primary: string;
   primaryLight: string;
+  accent: string;
   danger: string;
   success: string;
   overlay: string;
   imagePlaceholder: string;
 }
 
+// European Elegance Theme - Warm, sophisticated, premium feel
 export const lightColors: ThemeColors = {
-  background: '#FFFFFF',
-  surface: '#F8FAFC',
-  card: '#FFFFFF',
-  text: '#111827',
-  textSecondary: '#374151',
-  textMuted: '#9CA3AF',
-  border: '#F1F5F9',
-  primary: '#2563EB',
-  primaryLight: '#EFF6FF',
+  background: '#FDF8F3',      // Warm white
+  surface: '#FFF9F5',         // Slightly warmer surface
+  card: '#FFFFFF',            // Pure white cards for contrast
+  text: '#292524',            // Stone 800 - warm dark
+  textSecondary: '#57534E',   // Stone 600
+  textMuted: '#A8A29E',       // Stone 400
+  border: '#E7E5E4',          // Stone 200
+  primary: '#B45309',         // Warm Amber - premium accent
+  primaryLight: '#FEF3C7',    // Amber 100
+  accent: '#1E3A5F',          // Navy accent
   danger: '#DC2626',
   success: '#059669',
-  overlay: 'rgba(0,0,0,0.5)',
-  imagePlaceholder: '#1F2937',
+  overlay: 'rgba(41,37,36,0.5)',
+  imagePlaceholder: '#44403C', // Stone 700
 };
 
 export const darkColors: ThemeColors = {
-  background: '#0F172A',
-  surface: '#1E293B',
-  card: '#1E293B',
-  text: '#F1F5F9',
-  textSecondary: '#CBD5E1',
-  textMuted: '#64748B',
-  border: '#334155',
-  primary: '#3B82F6',
-  primaryLight: '#1E3A5F',
+  background: '#18181B',      // Zinc 900 - true dark
+  surface: '#27272A',         // Zinc 800
+  card: '#27272A',            // Zinc 800
+  text: '#FAFAF9',            // Stone 50
+  textSecondary: '#D6D3D1',   // Stone 300
+  textMuted: '#78716C',       // Stone 500
+  border: '#3F3F46',          // Zinc 700
+  primary: '#F59E0B',         // Bright Amber
+  primaryLight: '#422006',    // Amber 950
+  accent: '#60A5FA',          // Blue accent
   danger: '#EF4444',
   success: '#10B981',
   overlay: 'rgba(0,0,0,0.7)',
-  imagePlaceholder: '#334155',
+  imagePlaceholder: '#3F3F46', // Zinc 700
 };
 
 interface ThemeContextType {

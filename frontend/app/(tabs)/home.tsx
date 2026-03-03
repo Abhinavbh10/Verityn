@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, RefreshControl,
   ActivityIndicator, ScrollView, Image, Dimensions,
-  FlatList, Share, Platform, Vibration,
+  FlatList, Share, Platform, Vibration, Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,17 +25,34 @@ interface Article {
 
 interface Category { id: string; name: string; icon: string; color: string; }
 
+// Updated category colors for European Elegance theme
 const CATEGORIES: Category[] = [
-  { id: 'politics', name: 'Politics', icon: 'business', color: '#2563EB' },
-  { id: 'business', name: 'Business', icon: 'briefcase', color: '#059669' },
+  { id: 'politics', name: 'Politics', icon: 'business', color: '#1E3A5F' },      // Navy
+  { id: 'business', name: 'Business', icon: 'briefcase', color: '#B45309' },     // Amber (primary)
   { id: 'technology', name: 'Technology', icon: 'hardware-chip', color: '#7C3AED' },
-  { id: 'sports', name: 'Sports', icon: 'trophy', color: '#D97706' },
+  { id: 'sports', name: 'Sports', icon: 'trophy', color: '#059669' },            // Emerald
   { id: 'entertainment', name: 'Entertainment', icon: 'film', color: '#DB2777' },
   { id: 'health', name: 'Health', icon: 'heart', color: '#DC2626' },
   { id: 'science', name: 'Science', icon: 'flask', color: '#0891B2' },
 ];
 
 const API_BASE_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL || '';
+
+// Estimate read time based on description length
+const getReadTime = (description: string) => {
+  const wordsPerMinute = 200;
+  const words = description.split(' ').length;
+  const minutes = Math.ceil(words / wordsPerMinute);
+  return minutes < 1 ? '1 min read' : `${minutes} min read`;
+};
+
+// Get greeting based on time of day
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good Morning';
+  if (hour < 17) return 'Good Afternoon';
+  return 'Good Evening';
+};
 
 export default function HomeScreen() {
   const { colors, isDark } = useTheme();
@@ -50,11 +67,13 @@ export default function HomeScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [shakeMessage, setShakeMessage] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
+  
+  // Animation values
+  const bookmarkScale = useRef(new Animated.Value(1)).current;
 
   // Shake to refresh
   const handleShake = useCallback(() => {
     if (!refreshing && !loading) {
-      // Vibrate on shake (only on native)
       if (Platform.OS !== 'web') {
         Vibration.vibrate(100);
       }
@@ -117,12 +136,17 @@ export default function HomeScreen() {
     catch {} return '';
   };
 
-  const getCategoryColor = (categoryId: string) => CATEGORIES.find(c => c.id === categoryId.toLowerCase())?.color || '#64748B';
+  const getCategoryColor = (categoryId: string) => CATEGORIES.find(c => c.id === categoryId.toLowerCase())?.color || '#78716C';
 
   const filteredArticles = activeFilter === 'all' ? articles : articles.filter(a => a.category.toLowerCase() === activeFilter);
 
   const openArticle = async (url: string) => {
-    try { await WebBrowser.openBrowserAsync(url, { toolbarColor: '#000000', controlsColor: '#2563EB' }); }
+    try { 
+      await WebBrowser.openBrowserAsync(url, { 
+        toolbarColor: isDark ? '#18181B' : '#FDF8F3', 
+        controlsColor: colors.primary 
+      }); 
+    }
     catch (error) { console.error('Error opening URL:', error); }
   };
 
@@ -139,6 +163,12 @@ export default function HomeScreen() {
   };
 
   const toggleBookmark = async (article: Article) => {
+    // Bounce animation
+    Animated.sequence([
+      Animated.spring(bookmarkScale, { toValue: 1.3, useNativeDriver: true, friction: 3 }),
+      Animated.spring(bookmarkScale, { toValue: 1, useNativeDriver: true, friction: 3 }),
+    ]).start();
+
     if (bookmarkedIds.has(article.id)) {
       await removeBookmark(article.id);
       setBookmarkedIds(prev => { const newSet = new Set(prev); newSet.delete(article.id); return newSet; });
@@ -156,19 +186,21 @@ export default function HomeScreen() {
 
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
 
-  // Inshorts-style Card Component
+  // European Elegance Card Component
   const renderInshortsCard = ({ item, index }: { item: Article; index: number }) => {
     const isBookmarked = bookmarkedIds.has(item.id);
     const timeAgo = getTimeAgo(item.published);
     const categoryColor = getCategoryColor(item.category);
+    const readTime = getReadTime(item.description);
 
     return (
       <View style={[styles.inshortsCard, { backgroundColor: colors.background }]}>
-        {/* Image Section */}
+        {/* Image Section with Gradient Overlay */}
         <TouchableOpacity 
           style={styles.imageContainer}
           onPress={() => openArticle(item.link)}
           activeOpacity={0.95}
+          data-testid={`article-image-${index}`}
         >
           {item.image_url ? (
             <Image 
@@ -182,29 +214,36 @@ export default function HomeScreen() {
             </View>
           )}
           
+          {/* Gradient Overlay */}
+          <View style={styles.imageGradient} />
+          
           {/* Source Badge & Actions Overlay */}
           <View style={styles.imageOverlay}>
-            <View style={styles.sourceBadge}>
-              <Ionicons name="globe-outline" size={14} color="#fff" />
-              <Text style={styles.sourceBadgeText}>{item.source}</Text>
+            <View style={[styles.sourceBadge, { backgroundColor: 'rgba(253,248,243,0.95)' }]}>
+              <Ionicons name="globe-outline" size={13} color="#292524" />
+              <Text style={[styles.sourceBadgeText, { color: '#292524' }]}>{item.source}</Text>
             </View>
             
             <View style={styles.imageActions}>
               <TouchableOpacity 
-                style={styles.imageActionBtn}
+                style={[styles.imageActionBtn, { backgroundColor: 'rgba(253,248,243,0.9)' }]}
                 onPress={() => toggleBookmark(item)}
+                data-testid={`bookmark-btn-${index}`}
               >
-                <Ionicons 
-                  name={isBookmarked ? 'bookmark' : 'bookmark-outline'} 
-                  size={22} 
-                  color="#fff" 
-                />
+                <Animated.View style={{ transform: [{ scale: bookmarkScale }] }}>
+                  <Ionicons 
+                    name={isBookmarked ? 'bookmark' : 'bookmark-outline'} 
+                    size={20} 
+                    color={isBookmarked ? colors.primary : '#44403C'} 
+                  />
+                </Animated.View>
               </TouchableOpacity>
               <TouchableOpacity 
-                style={styles.imageActionBtn}
+                style={[styles.imageActionBtn, { backgroundColor: 'rgba(253,248,243,0.9)' }]}
                 onPress={() => shareArticle(item)}
+                data-testid={`share-btn-${index}`}
               >
-                <Ionicons name="share-social-outline" size={22} color="#fff" />
+                <Ionicons name="share-social-outline" size={20} color="#44403C" />
               </TouchableOpacity>
             </View>
           </View>
@@ -212,23 +251,32 @@ export default function HomeScreen() {
 
         {/* Content Section */}
         <View style={[styles.contentSection, { backgroundColor: colors.card }]}>
-          {/* Category & Time Row */}
+          {/* Category, Time & Read Time Row */}
           <View style={styles.metaRow}>
-            <View style={[styles.categoryTag, { backgroundColor: `${categoryColor}20` }]}>
-              <Text style={[styles.categoryTagText, { color: categoryColor }]}>{item.category}</Text>
+            <View style={styles.metaLeft}>
+              <View style={[styles.categoryTag, { backgroundColor: `${categoryColor}18` }]}>
+                <Text style={[styles.categoryTagText, { color: categoryColor }]}>{item.category}</Text>
+              </View>
+              <View style={styles.readTimeBadge}>
+                <Ionicons name="time-outline" size={12} color={colors.textMuted} />
+                <Text style={[styles.readTimeText, { color: colors.textMuted }]}>{readTime}</Text>
+              </View>
             </View>
             <Text style={[styles.timeText, { color: colors.textMuted }]}>{timeAgo} ago</Text>
           </View>
 
-          {/* Title */}
+          {/* Title - Enhanced typography */}
           <Text style={[styles.inshortsTitle, { color: colors.text }]}>{item.title}</Text>
           
-          {/* Description */}
+          {/* Description with inline Read More */}
           <View style={styles.descriptionContainer}>
             <Text style={[styles.inshortsDescription, { color: colors.textSecondary }]}>
               {item.description}
-              <Text style={[styles.readMoreLink, { color: colors.primary }]} onPress={() => openArticle(item.link)}>
-                {' '}Read more →
+              <Text 
+                style={[styles.readMoreLink, { color: colors.primary }]} 
+                onPress={() => openArticle(item.link)}
+              >
+                {' '}Read full story →
               </Text>
             </Text>
           </View>
@@ -250,20 +298,31 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
-      {/* Header */}
+      {/* Header with Greeting */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Verityn</Text>
-        <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>European News</Text>
+        <View>
+          <Text style={[styles.greetingText, { color: colors.textMuted }]}>{getGreeting()}</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Verityn</Text>
+        </View>
+        <Text style={[styles.headerSubtitle, { color: colors.primary }]}>European News</Text>
       </View>
 
-      {/* Category Tabs */}
-      <View style={[styles.categoryTabs, { borderBottomColor: colors.border }]}>
+      {/* Category Tabs - Enhanced */}
+      <View style={[styles.categoryTabs, { borderBottomColor: colors.border, backgroundColor: colors.surface }]}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsContainer}>
           <TouchableOpacity 
-            style={[styles.tab, activeFilter === 'all' && styles.tabActive]} 
+            style={[
+              styles.tab, 
+              activeFilter === 'all' && [styles.tabActive, { backgroundColor: colors.primaryLight }]
+            ]} 
             onPress={() => { setActiveFilter('all'); setCurrentIndex(0); }}
+            data-testid="tab-my-feed"
           >
-            <Text style={[styles.tabText, { color: colors.textMuted }, activeFilter === 'all' && styles.tabTextActive]}>My Feed</Text>
+            <Text style={[
+              styles.tabText, 
+              { color: colors.textMuted }, 
+              activeFilter === 'all' && { color: colors.primary, fontWeight: '600' }
+            ]}>My Feed</Text>
           </TouchableOpacity>
           {selectedCategories.map((catId) => {
             const category = CATEGORIES.find(c => c.id === catId); 
@@ -272,10 +331,18 @@ export default function HomeScreen() {
             return (
               <TouchableOpacity 
                 key={catId} 
-                style={[styles.tab, isActive && styles.tabActive]} 
+                style={[
+                  styles.tab, 
+                  isActive && [styles.tabActive, { backgroundColor: `${category.color}15` }]
+                ]} 
                 onPress={() => { setActiveFilter(catId); setCurrentIndex(0); }}
+                data-testid={`tab-${catId}`}
               >
-                <Text style={[styles.tabText, { color: colors.textMuted }, isActive && styles.tabTextActive]}>{category.name}</Text>
+                <Text style={[
+                  styles.tabText, 
+                  { color: colors.textMuted }, 
+                  isActive && { color: category.color, fontWeight: '600' }
+                ]}>{category.name}</Text>
               </TouchableOpacity>
             );
           })}
@@ -284,9 +351,9 @@ export default function HomeScreen() {
 
       {/* Error State */}
       {error && (
-        <View style={[styles.errorContainer, { backgroundColor: isDark ? '#3B1818' : '#FEF2F2' }]}>
-          <Ionicons name="alert-circle" size={24} color="#DC2626" />
-          <Text style={styles.errorText}>{error}</Text>
+        <View style={[styles.errorContainer, { backgroundColor: isDark ? '#422006' : '#FEF3C7' }]}>
+          <Ionicons name="alert-circle" size={24} color={colors.primary} />
+          <Text style={[styles.errorText, { color: colors.primary }]}>{error}</Text>
         </View>
       )}
 
@@ -305,27 +372,34 @@ export default function HomeScreen() {
             snapToInterval={CARD_HEIGHT}
             decelerationRate="fast"
             refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />
+              <RefreshControl 
+                refreshing={refreshing} 
+                onRefresh={onRefresh} 
+                tintColor={colors.primary} 
+                colors={[colors.primary]} 
+              />
             }
           />
         ) : (
           <View style={styles.emptyContainer}>
             <Ionicons name="newspaper-outline" size={64} color={colors.textMuted} />
             <Text style={[styles.emptyTitle, { color: colors.text }]}>No Articles Found</Text>
-            <Text style={[styles.emptyText, { color: colors.textMuted }]}>{activeFilter !== 'all' ? 'No news in this category.' : 'Pull down to refresh.'}</Text>
+            <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+              {activeFilter !== 'all' ? 'No news in this category.' : 'Pull down to refresh.'}
+            </Text>
           </View>
         )}
         
-        {/* Progress Indicator */}
+        {/* Progress Indicator - Enhanced */}
         {filteredArticles.length > 0 && (
-          <View style={styles.progressBar}>
+          <View style={[styles.progressBar, { backgroundColor: isDark ? 'rgba(39,39,42,0.9)' : 'rgba(41,37,36,0.85)' }]}>
             <Text style={styles.progressText}>{currentIndex + 1} / {filteredArticles.length}</Text>
           </View>
         )}
         
         {/* Shake Message */}
         {shakeMessage && (
-          <View style={styles.shakeMessage}>
+          <View style={[styles.shakeMessage, { backgroundColor: colors.primary }]}>
             <Ionicons name="refresh" size={16} color="#fff" />
             <Text style={styles.shakeMessageText}>{shakeMessage}</Text>
           </View>
@@ -336,48 +410,85 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  container: { flex: 1 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16 },
-  loadingText: { color: '#64748B', fontSize: 16 },
+  loadingText: { fontSize: 16 },
   
-  // Header
+  // Header - Enhanced
   header: { 
     paddingHorizontal: 20, 
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
   },
-  headerTitle: { fontSize: 24, fontWeight: '700', color: '#1E293B' },
-  headerSubtitle: { fontSize: 13, color: '#64748B', marginTop: 2 },
+  greetingText: { 
+    fontSize: 13, 
+    fontWeight: '500',
+    letterSpacing: 0.3,
+    marginBottom: 2,
+  },
+  headerTitle: { 
+    fontSize: 26, 
+    fontWeight: '700',
+    letterSpacing: -0.5,
+  },
+  headerSubtitle: { 
+    fontSize: 13, 
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
   
-  // Category Tabs
-  categoryTabs: { borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
-  tabsContainer: { paddingHorizontal: 16, paddingVertical: 8 },
-  tab: { paddingHorizontal: 16, paddingVertical: 8, marginRight: 8 },
-  tabActive: { borderBottomWidth: 2, borderBottomColor: '#2563EB' },
-  tabText: { fontSize: 14, fontWeight: '500', color: '#64748B' },
-  tabTextActive: { color: '#2563EB', fontWeight: '600' },
+  // Category Tabs - Pill style
+  categoryTabs: { borderBottomWidth: 1 },
+  tabsContainer: { paddingHorizontal: 16, paddingVertical: 10, gap: 8 },
+  tab: { 
+    paddingHorizontal: 16, 
+    paddingVertical: 8, 
+    borderRadius: 20,
+  },
+  tabActive: { 
+    borderRadius: 20,
+  },
+  tabText: { fontSize: 14, fontWeight: '500' },
   
-  // Error
-  errorContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, backgroundColor: '#FEF2F2', marginHorizontal: 16, marginTop: 12, borderRadius: 12, gap: 8 },
-  errorText: { color: '#DC2626', fontSize: 14 },
+  // Error - Warm colors
+  errorContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    padding: 14, 
+    marginHorizontal: 16, 
+    marginTop: 12, 
+    borderRadius: 12, 
+    gap: 10 
+  },
+  errorText: { fontSize: 14, fontWeight: '500' },
   
   // Cards Container
   cardsContainer: { flex: 1 },
   
-  // Inshorts Card
+  // Inshorts Card - Refined
   inshortsCard: { 
     height: CARD_HEIGHT,
-    backgroundColor: '#fff',
   },
   imageContainer: {
-    height: CARD_HEIGHT * 0.32,
+    height: CARD_HEIGHT * 0.34,
     position: 'relative',
   },
   inshortsImage: { 
     width: '100%', 
     height: '100%',
-    backgroundColor: '#1F2937',
+  },
+  imageGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '50%',
+    backgroundColor: 'transparent',
+    // Gradient effect via overlay
   },
   imagePlaceholder: {
     width: '100%',
@@ -393,49 +504,61 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    padding: 12,
-    paddingBottom: 14,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    padding: 14,
+    paddingBottom: 16,
   },
   sourceBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
     gap: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   sourceBadgeText: {
-    color: '#fff',
     fontSize: 12,
     fontWeight: '600',
+    letterSpacing: 0.2,
   },
   imageActions: {
     flexDirection: 'row',
     gap: 10,
   },
   imageActionBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   
-  // Content Section
+  // Content Section - Enhanced typography
   contentSection: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 18,
     paddingBottom: 8,
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 14,
+  },
+  metaLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   categoryTag: {
     paddingHorizontal: 12,
@@ -443,50 +566,58 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   categoryTagText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    textTransform: 'capitalize',
+    letterSpacing: 0.3,
+  },
+  readTimeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  readTimeText: {
+    fontSize: 11,
+    fontWeight: '500',
   },
   timeText: {
     fontSize: 12,
-    color: '#9CA3AF',
   },
   inshortsTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
-    color: '#111827',
-    lineHeight: 28,
+    lineHeight: 30,
     marginBottom: 14,
+    letterSpacing: -0.3,
   },
   descriptionContainer: {
     flex: 1,
   },
   inshortsDescription: {
-    fontSize: 16,
-    color: '#374151',
+    fontSize: 15,
     lineHeight: 26,
     marginBottom: 12,
+    letterSpacing: 0.1,
   },
   readMoreLink: {
-    color: '#2563EB',
-    fontWeight: '500',
+    fontWeight: '600',
+    letterSpacing: 0.2,
   },
   
-  // Progress Bar
+  // Progress Bar - Refined
   progressBar: {
     position: 'absolute',
-    bottom: 12,
+    bottom: 14,
     right: 16,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
   },
   progressText: {
-    color: '#fff',
+    color: '#FAFAF9',
     fontSize: 11,
     fontWeight: '600',
+    letterSpacing: 0.3,
   },
   
   // Shake Message
@@ -495,22 +626,32 @@ const styles = StyleSheet.create({
     top: 20,
     left: '50%',
     transform: [{ translateX: -60 }],
-    backgroundColor: 'rgba(37, 99, 235, 0.9)',
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
     paddingVertical: 10,
-    borderRadius: 20,
+    borderRadius: 24,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
   },
   shakeMessageText: {
     color: '#fff',
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   
   // Empty State
-  emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 64, paddingHorizontal: 32 },
+  emptyContainer: { 
+    flex: 1, 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    paddingVertical: 64, 
+    paddingHorizontal: 32 
+  },
   emptyTitle: { fontSize: 20, fontWeight: '600', marginTop: 16, marginBottom: 8 },
   emptyText: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
 });
