@@ -187,13 +187,14 @@ export default function HomeScreen() {
     }
   };
 
-  const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
-    if (viewableItems.length > 0) {
-      setCurrentIndex(viewableItems[0].index || 0);
-    }
-  }).current;
-
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
+
+  // Use a ref to store the latest callback to avoid FlatList warning
+  const onViewableItemsChangedRef = useRef(({ viewableItems }: any) => {
+    if (viewableItems.length > 0 && viewableItems[0].index !== null && viewableItems[0].index !== undefined) {
+      setCurrentIndex(viewableItems[0].index);
+    }
+  });
 
   // European Elegance Card Component
   const renderInshortsCard = ({ item, index }: { item: Article; index: number }) => {
@@ -376,7 +377,7 @@ export default function HomeScreen() {
             keyExtractor={(item) => item.id}
             pagingEnabled
             showsVerticalScrollIndicator={false}
-            onViewableItemsChanged={onViewableItemsChanged}
+            onViewableItemsChanged={onViewableItemsChangedRef.current}
             viewabilityConfig={viewabilityConfig}
             snapToInterval={CARD_HEIGHT}
             decelerationRate="fast"
