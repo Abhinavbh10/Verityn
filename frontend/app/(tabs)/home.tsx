@@ -149,6 +149,23 @@ export default function HomeScreen() {
 
   const filteredArticles = activeFilter === 'all' ? articles : articles.filter(a => a.category.toLowerCase() === activeFilter);
 
+  // Handle scroll end to update counter (more reliable on web)
+  const handleScrollEnd = useCallback((event: any) => {
+    try {
+      let offsetY = 0;
+      if (event.nativeEvent?.contentOffset?.y !== undefined) {
+        offsetY = event.nativeEvent.contentOffset.y;
+      }
+      
+      const index = Math.round(offsetY / CARD_HEIGHT);
+      if (index >= 0 && index < filteredArticles.length) {
+        setCurrentIndex(index);
+      }
+    } catch (e) {
+      console.log('Scroll tracking error:', e);
+    }
+  }, [filteredArticles.length]);
+
   const openArticle = async (url: string) => {
     try { 
       await WebBrowser.openBrowserAsync(url, { 
@@ -381,6 +398,25 @@ export default function HomeScreen() {
             viewabilityConfig={viewabilityConfig}
             snapToInterval={CARD_HEIGHT}
             decelerationRate="fast"
+            onMomentumScrollEnd={handleScrollEnd}
+            onScrollEndDrag={handleScrollEnd}
+            scrollEventThrottle={16}
+            ListFooterComponent={() => (
+              <View style={[styles.endOfArticles, { backgroundColor: colors.background }]}>
+                <Ionicons name="checkmark-circle" size={48} color={colors.primary} />
+                <Text style={[styles.endTitle, { color: colors.text }]}>You're all caught up!</Text>
+                <Text style={[styles.endText, { color: colors.textMuted }]}>
+                  Pull down to refresh for new articles
+                </Text>
+                <TouchableOpacity 
+                  style={[styles.refreshButton, { backgroundColor: colors.primaryLight }]}
+                  onPress={onRefresh}
+                >
+                  <Ionicons name="refresh" size={18} color={colors.primary} />
+                  <Text style={[styles.refreshButtonText, { color: colors.primary }]}>Refresh</Text>
+                </TouchableOpacity>
+              </View>
+            )}
             refreshControl={
               <RefreshControl 
                 refreshing={refreshing} 
@@ -664,4 +700,36 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { fontSize: 20, fontWeight: '600', marginTop: 16, marginBottom: 8 },
   emptyText: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
+  
+  // End of Articles
+  endOfArticles: {
+    height: CARD_HEIGHT,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+  },
+  endTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  endText: {
+    fontSize: 15,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  refreshButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 24,
+  },
+  refreshButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });

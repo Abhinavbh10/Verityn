@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
@@ -32,20 +32,33 @@ export default function BookmarksScreen() {
 
   const handleClearAll = () => {
     if (bookmarks.length === 0) return;
-    Alert.alert('Clear All Bookmarks', 'Are you sure you want to remove all saved articles?', [
-      { text: 'Cancel', style: 'cancel' },
-      { 
-        text: 'Clear All', 
-        style: 'destructive', 
-        onPress: () => {
-          clearAllBookmarks().then(() => {
-            setBookmarks([]);
-          }).catch(err => {
-            console.error('Error clearing bookmarks:', err);
-          });
-        } 
-      },
-    ]);
+    
+    const doClear = async () => {
+      try {
+        await clearAllBookmarks();
+        setBookmarks([]);
+      } catch (err) {
+        console.error('Error clearing bookmarks:', err);
+      }
+    };
+    
+    // On web, use window.confirm; on native, use Alert.alert
+    if (Platform.OS === 'web') {
+      // For web, show confirm dialog
+      let confirmed = true;
+      if (typeof window !== 'undefined') {
+        confirmed = window.confirm('Clear All Bookmarks?\n\nAre you sure you want to remove all saved articles?');
+      }
+      
+      if (confirmed) {
+        doClear();
+      }
+    } else {
+      Alert.alert('Clear All Bookmarks', 'Are you sure you want to remove all saved articles?', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Clear All', style: 'destructive', onPress: doClear },
+      ]);
+    }
   };
 
   const renderArticle = ({ item }: { item: BookmarkedArticle }) => {
