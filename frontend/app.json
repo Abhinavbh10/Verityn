@@ -15,21 +15,27 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.verityn.news",
+      "bundleIdentifier": "com.verityn.app",
       "buildNumber": "1",
       "infoPlist": {
-        "NSUserTrackingUsageDescription": "This helps us deliver relevant news to you"
+        "NSUserTrackingUsageDescription": "This helps us deliver relevant news and personalized content",
+        "UIBackgroundModes": ["remote-notification"]
       }
     },
     "android": {
-      "package": "com.verityn.news",
-      "versionCode": 1,
+      "package": "com.verityn.app",
+      "versionCode": 2,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#FDF8F3"
       },
       "edgeToEdgeEnabled": true,
-      "permissions": ["RECEIVE_BOOT_COMPLETED", "VIBRATE"]
+      "permissions": [
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "POST_NOTIFICATIONS"
+      ],
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "bundler": "metro",
@@ -45,6 +51,15 @@
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#FDF8F3"
+        }
+      ],
+      "@react-native-firebase/app",
+      "@react-native-firebase/analytics",
+      "@react-native-firebase/crashlytics",
+      [
+        "@react-native-firebase/messaging",
+        {
+          "messaging_android_notification_delegation_enabled": true
         }
       ]
     ],

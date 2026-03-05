@@ -59,10 +59,6 @@ export default function TabLayout() {
           fontSize: 11,
           fontWeight: '600',
         },
-        // Add safe area padding to content to prevent overlap with tab bar
-        sceneContainerStyle: {
-          paddingBottom: tabBarHeight,
-        },
       }}
     >
       <Tabs.Screen

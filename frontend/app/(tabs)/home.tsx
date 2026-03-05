@@ -15,6 +15,7 @@ import { getPreferences } from '../../src/utils/storage';
 import { useTheme } from '../../src/utils/theme';
 import { saveArticleOffline, isArticleSavedOffline } from '../../src/utils/offline';
 import { useShakeDetector } from '../../src/hooks/useShakeDetector';
+import { logEvent, logScreenView, logError } from '../../src/utils/firebase';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const CARD_HEIGHT = SCREEN_HEIGHT - 180;
@@ -87,7 +88,11 @@ export default function HomeScreen() {
   useShakeDetector({ onShake: handleShake });
 
   // Load preferences on mount
-  useEffect(() => { loadPreferencesAndFetch(); }, []);
+  useEffect(() => { 
+    loadPreferencesAndFetch(); 
+    // Log screen view for analytics
+    logScreenView('home_screen');
+  }, []);
 
   // Reload bookmarks every time the screen comes into focus
   useFocusEffect(
@@ -108,8 +113,9 @@ export default function HomeScreen() {
         setSelectedCategories(preferences.categories || []);
         await fetchNews(preferences.categories || []);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading preferences:', error);
+      logError(error, 'Error loading preferences');
       setError('Failed to load preferences');
       setLoading(false);
     }
@@ -122,14 +128,23 @@ export default function HomeScreen() {
       if (!response.ok) throw new Error('Failed to fetch news');
       const data = await response.json();
       setArticles(data.articles || []);
-    } catch (error) {
+      // Log successful news fetch
+      logEvent('news_loaded', { 
+        categories: categories.join(','), 
+        article_count: data.articles?.length || 0 
+      });
+    } catch (error: any) {
       console.error('Error fetching news:', error);
+      logError(error, 'Error fetching news');
       setError('Unable to load news. Pull to refresh.');
     } finally { setLoading(false); setRefreshing(false); }
   };
 
   const onRefresh = useCallback(async () => {
-    setRefreshing(true); await loadBookmarks(); await fetchNews(selectedCategories);
+    setRefreshing(true);
+    logEvent('feed_refreshed', { method: 'pull_to_refresh' });
+    await loadBookmarks(); 
+    await fetchNews(selectedCategories);
   }, [selectedCategories]);
 
   const formatDate = (dateString: string) => {
@@ -166,8 +181,16 @@ export default function HomeScreen() {
     }
   }, [filteredArticles.length]);
 
-  const openArticle = async (url: string) => {
+  const openArticle = async (url: string, article?: Article) => {
     try { 
+      // Log article open event
+      if (article) {
+        logEvent('article_opened', {
+          article_id: article.id,
+          category: article.category,
+          source: article.source,
+        });
+      }
       await WebBrowser.openBrowserAsync(url, { 
         toolbarColor: isDark ? '#18181B' : '#FDF8F3', 
         controlsColor: colors.primary 
@@ -178,6 +201,12 @@ export default function HomeScreen() {
 
   const shareArticle = async (article: Article) => {
     try {
+      // Log share event
+      logEvent('article_shared', {
+        article_id: article.id,
+        category: article.category,
+        source: article.source,
+      });
       await Share.share({
         title: article.title,
         message: `${article.title}\n\nRead more: ${article.link}`,
@@ -198,9 +227,13 @@ export default function HomeScreen() {
     if (bookmarkedIds.has(article.id)) {
       await removeBookmark(article.id);
       setBookmarkedIds(prev => { const newSet = new Set(prev); newSet.delete(article.id); return newSet; });
+      // Log bookmark removed
+      logEvent('bookmark_removed', { article_id: article.id, category: article.category });
     } else {
       await addBookmark(article);
       setBookmarkedIds(prev => new Set(prev).add(article.id));
+      // Log bookmark added
+      logEvent('bookmark_added', { article_id: article.id, category: article.category });
     }
   };
 
@@ -225,7 +258,7 @@ export default function HomeScreen() {
         {/* Image Section with Gradient Overlay */}
         <TouchableOpacity 
           style={styles.imageContainer}
-          onPress={() => openArticle(item.link)}
+          onPress={() => openArticle(item.link, item)}
           activeOpacity={0.95}
           data-testid={`article-image-${index}`}
         >
@@ -301,7 +334,7 @@ export default function HomeScreen() {
               {item.description}
               <Text 
                 style={[styles.readMoreLink, { color: colors.primary }]} 
-                onPress={() => openArticle(item.link)}
+                onPress={() => openArticle(item.link, item)}
               >
                 {' '}Read full story →
               </Text>
