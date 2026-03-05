@@ -331,7 +331,7 @@ export default function HomeScreen() {
           <Text style={[styles.greetingText, { color: colors.textMuted }]}>{getGreeting()}</Text>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Verityn</Text>
         </View>
-        <Text style={[styles.headerSubtitle, { color: colors.primary }]}>European News</Text>
+        <Text style={[styles.headerSubtitle, { color: colors.primary }]}>Global News</Text>
       </View>
 
       {/* Category Tabs - Enhanced */}
@@ -433,13 +433,6 @@ export default function HomeScreen() {
             <Text style={[styles.emptyText, { color: colors.textMuted }]}>
               {activeFilter !== 'all' ? 'No news in this category.' : 'Pull down to refresh.'}
             </Text>
-          </View>
-        )}
-        
-        {/* Progress Indicator - Enhanced */}
-        {filteredArticles.length > 0 && (
-          <View style={[styles.progressBar, { backgroundColor: isDark ? 'rgba(39,39,42,0.9)' : 'rgba(41,37,36,0.85)' }]}>
-            <Text style={styles.progressText}>{currentIndex + 1} / {filteredArticles.length}</Text>
           </View>
         )}
         
@@ -648,22 +641,6 @@ const styles = StyleSheet.create({
   readMoreLink: {
     fontWeight: '600',
     letterSpacing: 0.2,
-  },
-  
-  // Progress Bar - Refined
-  progressBar: {
-    position: 'absolute',
-    bottom: 14,
-    right: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
-  },
-  progressText: {
-    color: '#FAFAF9',
-    fontSize: 11,
-    fontWeight: '600',
-    letterSpacing: 0.3,
   },
   
   // Shake Message

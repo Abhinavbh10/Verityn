@@ -242,13 +242,25 @@ CITY_KEYWORDS = {
 # European RSS Feed Sources organized by category
 RSS_FEEDS = {
     "politics": [
+        # European Sources
         {"url": "http://feeds.bbci.co.uk/news/politics/rss.xml", "source": "BBC Politics"},
         {"url": "https://www.theguardian.com/politics/rss", "source": "The Guardian Politics"},
         {"url": "https://rss.dw.com/rdf/rss-en-eu", "source": "DW Europe"},
         {"url": "https://www.euronews.com/rss?level=theme&name=news", "source": "Euronews"},
         {"url": "https://www.politico.eu/feed/", "source": "Politico EU"},
+        # US Sources
+        {"url": "https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml", "source": "NY Times Politics"},
+        {"url": "https://feeds.washingtonpost.com/rss/politics", "source": "Washington Post"},
+        {"url": "https://www.politico.com/rss/politics.xml", "source": "Politico US"},
+        {"url": "https://feeds.npr.org/1014/rss.xml", "source": "NPR Politics"},
+        # Global Sources
+        {"url": "http://feeds.bbci.co.uk/news/world/rss.xml", "source": "BBC World"},
+        {"url": "https://www.theguardian.com/world/rss", "source": "The Guardian World"},
+        {"url": "https://www.aljazeera.com/xml/rss/all.xml", "source": "Al Jazeera"},
+        {"url": "https://feeds.reuters.com/reuters/topNews", "source": "Reuters"},
     ],
     "business": [
+        # European Sources
         {"url": "http://feeds.bbci.co.uk/news/business/rss.xml", "source": "BBC Business"},
         {"url": "https://www.theguardian.com/uk/business/rss", "source": "The Guardian Business"},
         {"url": "https://rss.dw.com/rdf/rss-en-bus", "source": "DW Business"},
@@ -256,37 +268,74 @@ RSS_FEEDS = {
         {"url": "https://www.ft.com/rss/home/uk", "source": "Financial Times"},
         {"url": "https://www.politico.eu/section/economy-jobs/feed/", "source": "Politico EU Economy"},
         {"url": "https://www.euronews.com/rss?level=theme&name=business", "source": "Euronews Business"},
+        # US & Global Sources
+        {"url": "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml", "source": "NY Times Business"},
+        {"url": "https://feeds.bloomberg.com/markets/news.rss", "source": "Bloomberg Markets"},
+        {"url": "https://www.cnbc.com/id/10001147/device/rss/rss.html", "source": "CNBC"},
+        {"url": "https://feeds.npr.org/1006/rss.xml", "source": "NPR Business"},
+        {"url": "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=20910258", "source": "CNBC World"},
     ],
     "technology": [
+        # European Sources
         {"url": "http://feeds.bbci.co.uk/news/technology/rss.xml", "source": "BBC Technology"},
         {"url": "https://www.theguardian.com/uk/technology/rss", "source": "The Guardian Tech"},
         {"url": "https://rss.dw.com/rdf/rss-en-sci", "source": "DW Science & Tech"},
         {"url": "https://www.techradar.com/rss", "source": "TechRadar"},
         {"url": "https://www.politico.eu/section/technology/feed/", "source": "Politico EU Tech"},
         {"url": "https://www.euronews.com/rss?level=theme&name=next", "source": "Euronews Tech"},
+        # US & Global Sources
+        {"url": "https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml", "source": "NY Times Tech"},
+        {"url": "https://feeds.arstechnica.com/arstechnica/index", "source": "Ars Technica"},
+        {"url": "https://www.theverge.com/rss/index.xml", "source": "The Verge"},
+        {"url": "https://www.wired.com/feed/rss", "source": "Wired"},
+        {"url": "https://techcrunch.com/feed/", "source": "TechCrunch"},
     ],
     "sports": [
+        # European Sources
         {"url": "http://feeds.bbci.co.uk/sport/rss.xml", "source": "BBC Sport"},
         {"url": "https://www.theguardian.com/uk/sport/rss", "source": "The Guardian Sport"},
         {"url": "https://feeds.skynews.com/feeds/rss/sports.xml", "source": "Sky News Sport"},
         {"url": "https://www.euronews.com/rss?level=theme&name=sport", "source": "Euronews Sport"},
+        # US & Global Sources
+        {"url": "https://rss.nytimes.com/services/xml/rss/nyt/Sports.xml", "source": "NY Times Sports"},
+        {"url": "https://www.espn.com/espn/rss/news", "source": "ESPN"},
+        {"url": "https://api.foxsports.com/v1/rss?partnerKey=zBaFxRyGKCfxBagJG9b8pqLyndmvo7UU", "source": "Fox Sports"},
     ],
     "entertainment": [
+        # European Sources
         {"url": "http://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml", "source": "BBC Entertainment"},
         {"url": "https://www.theguardian.com/uk/culture/rss", "source": "The Guardian Culture"},
         {"url": "https://rss.dw.com/rdf/rss-en-cul", "source": "DW Culture"},
         {"url": "https://www.euronews.com/rss?level=theme&name=culture", "source": "Euronews Culture"},
+        # US & Global Sources
+        {"url": "https://rss.nytimes.com/services/xml/rss/nyt/Arts.xml", "source": "NY Times Arts"},
+        {"url": "https://variety.com/feed/", "source": "Variety"},
+        {"url": "https://www.hollywoodreporter.com/feed/", "source": "Hollywood Reporter"},
+        {"url": "https://ew.com/feed/", "source": "Entertainment Weekly"},
     ],
     "health": [
+        # European Sources
         {"url": "http://feeds.bbci.co.uk/news/health/rss.xml", "source": "BBC Health"},
         {"url": "https://www.theguardian.com/lifeandstyle/health-and-wellbeing/rss", "source": "The Guardian Health"},
         {"url": "https://rss.dw.com/rdf/rss-en-health", "source": "DW Health"},
+        # US & Global Sources
+        {"url": "https://rss.nytimes.com/services/xml/rss/nyt/Health.xml", "source": "NY Times Health"},
+        {"url": "https://feeds.npr.org/1128/rss.xml", "source": "NPR Health"},
+        {"url": "https://www.statnews.com/feed/", "source": "STAT News"},
+        {"url": "https://www.webmd.com/xml/rss/rss.xml", "source": "WebMD"},
     ],
     "science": [
+        # European Sources
         {"url": "http://feeds.bbci.co.uk/news/science_and_environment/rss.xml", "source": "BBC Science"},
         {"url": "https://www.theguardian.com/science/rss", "source": "The Guardian Science"},
         {"url": "https://rss.dw.com/rdf/rss-en-sci", "source": "DW Science"},
         {"url": "https://www.newscientist.com/feed/home/", "source": "New Scientist"},
+        # US & Global Sources
+        {"url": "https://rss.nytimes.com/services/xml/rss/nyt/Science.xml", "source": "NY Times Science"},
+        {"url": "https://www.sciencedaily.com/rss/all.xml", "source": "Science Daily"},
+        {"url": "https://feeds.nature.com/nature/rss/current", "source": "Nature"},
+        {"url": "https://www.space.com/feeds/all", "source": "Space.com"},
+        {"url": "https://feeds.npr.org/1007/rss.xml", "source": "NPR Science"},
     ],
 }
 
