@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { format, parseISO, isValid } from 'date-fns';
 import * as WebBrowser from 'expo-web-browser';
 import Constants from 'expo-constants';
+import { useFocusEffect } from 'expo-router';
 import { addBookmark, removeBookmark, getBookmarks } from '../../src/utils/bookmarks';
 
 interface Article { id: string; title: string; description: string; link: string; published: string; source: string; category: string; image_url?: string; }
@@ -29,6 +30,13 @@ export default function SearchScreen() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
+
+  // Reload bookmarks every time the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadBookmarks();
+    }, [])
+  );
 
   const loadBookmarks = async () => { const bookmarks = await getBookmarks(); setBookmarkedIds(new Set(bookmarks.map(b => b.id))); };
 

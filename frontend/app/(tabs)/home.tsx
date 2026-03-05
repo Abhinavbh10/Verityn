@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { format, parseISO, isValid, formatDistanceToNow } from 'date-fns';
 import * as WebBrowser from 'expo-web-browser';
 import Constants from 'expo-constants';
+import { useFocusEffect } from 'expo-router';
 import { addBookmark, removeBookmark, getBookmarks } from '../../src/utils/bookmarks';
 import { getPreferences } from '../../src/utils/storage';
 import { useTheme } from '../../src/utils/theme';
@@ -85,7 +86,15 @@ export default function HomeScreen() {
 
   useShakeDetector({ onShake: handleShake });
 
-  useEffect(() => { loadPreferencesAndFetch(); loadBookmarks(); }, []);
+  // Load preferences on mount
+  useEffect(() => { loadPreferencesAndFetch(); }, []);
+
+  // Reload bookmarks every time the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadBookmarks();
+    }, [])
+  );
 
   const loadBookmarks = async () => {
     const bookmarks = await getBookmarks();
