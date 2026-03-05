@@ -11,7 +11,7 @@ from typing import Dict, List, Any
 import time
 
 # Backend URL from frontend/.env
-BACKEND_URL = "https://article-digest-app.preview.emergentagent.com/api"
+BACKEND_URL = "https://cards-feed-demo.preview.emergentagent.com/api"
 
 class TestResult:
     def __init__(self):

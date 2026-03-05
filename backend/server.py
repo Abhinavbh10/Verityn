@@ -28,6 +28,9 @@ app.add_middleware(
 # Minimum description length (characters) - if shorter, we'll try to fetch more
 MIN_DESCRIPTION_LENGTH = 200
 
+# Fallback placeholder image for articles without images
+FALLBACK_IMAGE_URL = "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&q=80"  # Generic news image
+
 # Stop words to ignore in relevance checking
 STOP_WORDS = {
     'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with',
@@ -382,44 +385,115 @@ def extract_image_from_entry(entry) -> Optional[str]:
     return image_url
 
 async def scrape_article_image(url: str) -> Optional[str]:
-    """Scrape article page to find a high-quality image"""
+    """Scrape article page to find a high-quality image with multiple fallback strategies"""
     try:
-        async with httpx.AsyncClient(timeout=8.0, follow_redirects=True) as client:
+        async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
             response = await client.get(url, headers={
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
             })
             response.raise_for_status()
             
         soup = BeautifulSoup(response.text, 'html.parser')
         
-        # Try Open Graph image (usually high quality)
+        # Strategy 1: Open Graph image (most reliable, usually high quality)
         og_image = soup.find('meta', property='og:image')
         if og_image and og_image.get('content'):
             img_url = og_image['content']
+            # Make absolute URL if needed
+            if img_url.startswith('//'):
+                img_url = 'https:' + img_url
+            elif img_url.startswith('/'):
+                from urllib.parse import urlparse
+                parsed = urlparse(url)
+                img_url = f"{parsed.scheme}://{parsed.netloc}{img_url}"
             if is_high_quality_image(img_url):
                 return get_best_image_url(img_url)
         
-        # Try Twitter card image
+        # Strategy 2: Twitter card image
         twitter_image = soup.find('meta', {'name': 'twitter:image'})
+        if not twitter_image:
+            twitter_image = soup.find('meta', {'name': 'twitter:image:src'})
         if twitter_image and twitter_image.get('content'):
             img_url = twitter_image['content']
+            if img_url.startswith('//'):
+                img_url = 'https:' + img_url
+            elif img_url.startswith('/'):
+                from urllib.parse import urlparse
+                parsed = urlparse(url)
+                img_url = f"{parsed.scheme}://{parsed.netloc}{img_url}"
             if is_high_quality_image(img_url):
                 return get_best_image_url(img_url)
         
-        # Try article main image
+        # Strategy 3: Schema.org image
+        schema_image = soup.find('meta', {'itemprop': 'image'})
+        if schema_image and schema_image.get('content'):
+            img_url = schema_image['content']
+            if img_url.startswith('//'):
+                img_url = 'https:' + img_url
+            elif img_url.startswith('/'):
+                from urllib.parse import urlparse
+                parsed = urlparse(url)
+                img_url = f"{parsed.scheme}://{parsed.netloc}{img_url}"
+            if is_high_quality_image(img_url):
+                return get_best_image_url(img_url)
+        
+        # Strategy 4: Find largest image in article body
         article = soup.find('article')
         if article:
-            img = article.find('img', src=True)
-            if img and img.get('src'):
-                img_url = img['src']
-                # Make absolute URL
-                if img_url.startswith('//'):
-                    img_url = 'https:' + img_url
-                elif img_url.startswith('/'):
+            images = article.find_all('img', src=True)
+            best_img = None
+            best_size = 0
+            for img in images:
+                img_url = img.get('src', '')
+                # Skip base64 images and tracking pixels
+                if img_url.startswith('data:') or 'pixel' in img_url.lower():
+                    continue
+                # Try to determine image size from attributes
+                width = img.get('width', 0)
+                height = img.get('height', 0)
+                try:
+                    size = int(width or 0) * int(height or 0)
+                except:
+                    size = 0
+                # Also check for lazy loaded images
+                lazy_src = img.get('data-src') or img.get('data-lazy-src') or img.get('data-original')
+                if lazy_src:
+                    img_url = lazy_src
+                if size > best_size or (best_size == 0 and is_high_quality_image(img_url)):
+                    best_size = size
+                    best_img = img_url
+            
+            if best_img:
+                if best_img.startswith('//'):
+                    best_img = 'https:' + best_img
+                elif best_img.startswith('/'):
                     from urllib.parse import urlparse
                     parsed = urlparse(url)
-                    img_url = f"{parsed.scheme}://{parsed.netloc}{img_url}"
+                    best_img = f"{parsed.scheme}://{parsed.netloc}{best_img}"
+                return get_best_image_url(best_img)
+        
+        # Strategy 5: Find any large image in main content
+        main = soup.find('main') or soup.find('[role="main"]') or soup.find('body')
+        if main:
+            images = main.find_all('img', src=True)
+            for img in images:
+                img_url = img.get('src', '')
+                # Check for lazy loaded source
+                lazy_src = img.get('data-src') or img.get('data-lazy-src') or img.get('data-original')
+                if lazy_src:
+                    img_url = lazy_src
+                # Skip base64 and tracking pixels
+                if img_url.startswith('data:') or 'pixel' in img_url.lower() or 'logo' in img_url.lower():
+                    continue
                 if is_high_quality_image(img_url):
+                    if img_url.startswith('//'):
+                        img_url = 'https:' + img_url
+                    elif img_url.startswith('/'):
+                        from urllib.parse import urlparse
+                        parsed = urlparse(url)
+                        img_url = f"{parsed.scheme}://{parsed.netloc}{img_url}"
                     return get_best_image_url(img_url)
                     
     except Exception as e:
@@ -545,11 +619,11 @@ async def fetch_rss_feed(url: str, source: str, category: str) -> List[NewsArtic
                 if content and not isinstance(content, Exception):
                     entries_data[idx]['description'] = content
         
-        # Scrape images for articles without images (limit to 5 per feed)
+        # Scrape images for articles without images (increased to 8 per feed for better coverage)
         image_scrape_tasks = []
         image_scrape_indices = []
         for i, entry in enumerate(entries_data):
-            if not entry['image_url'] and len(image_scrape_tasks) < 5:
+            if not entry['image_url'] and len(image_scrape_tasks) < 8:
                 image_scrape_tasks.append(scrape_article_image(entry['link']))
                 image_scrape_indices.append(i)
         
@@ -559,11 +633,10 @@ async def fetch_rss_feed(url: str, source: str, category: str) -> List[NewsArtic
                 if img_url and not isinstance(img_url, Exception):
                     entries_data[idx]['image_url'] = img_url
         
-        # Create articles - ONLY include articles with high-quality images AND relevant content
+        # Create articles - include articles with images OR use fallback
         for entry in entries_data:
-            # Skip articles without images
-            if not entry['image_url']:
-                continue
+            # Use fallback image if no image found
+            image_url = entry['image_url'] or FALLBACK_IMAGE_URL
             
             # Clean the description first (remove junk)
             description = clean_description(entry['description'])
@@ -591,7 +664,7 @@ async def fetch_rss_feed(url: str, source: str, category: str) -> List[NewsArtic
                 published=entry['published'],
                 source=source,
                 category=category,
-                image_url=entry['image_url']
+                image_url=image_url  # Use the variable with fallback
             )
             articles.append(article)
             

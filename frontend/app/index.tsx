@@ -152,12 +152,16 @@ export default function WelcomeScreen() {
                   key={category.id}
                   style={[
                     styles.categoryCard,
-                    isSelected && { borderColor: category.color, backgroundColor: `${category.color}10` }
+                    isSelected && styles.categoryCardSelected,
+                    isSelected && { borderColor: category.color }
                   ]}
                   onPress={() => toggleCategory(category.id)}
                   activeOpacity={0.7}
                 >
-                  <View style={[styles.iconContainer, { backgroundColor: `${category.color}15` }]}>
+                  <View style={[
+                    styles.iconContainer, 
+                    { backgroundColor: isSelected ? 'transparent' : `${category.color}15` }
+                  ]}>
                     <Ionicons name={category.icon as any} size={28} color={category.color} />
                   </View>
                   <Text style={[styles.categoryName, isSelected && { color: category.color }]}>
@@ -229,9 +233,12 @@ const styles = StyleSheet.create({
     marginBottom: 12, borderWidth: 2, borderColor: '#E7E5E4', position: 'relative',
     shadowColor: '#44403C', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2,
   },
+  categoryCardSelected: {
+    backgroundColor: 'transparent',
+  },
   iconContainer: {
     width: 52, height: 52, borderRadius: 14, justifyContent: 'center',
-    alignItems: 'center', marginBottom: 12,
+    alignItems: 'center', marginBottom: 12, backgroundColor: 'transparent',
   },
   categoryName: { fontSize: 15, fontWeight: '600', color: '#57534E' },
   checkmark: {
