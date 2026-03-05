@@ -52,6 +52,7 @@
       "typedRoutes": true
     },
     "extra": {
+      "EXPO_PUBLIC_BACKEND_URL": "https://article-digest-app.preview.emergentagent.com",
       "eas": {
         "projectId": "your-project-id"
       }

@@ -143,10 +143,10 @@ class NewsResponse(BaseModel):
 REGIONAL_RSS_FEEDS = {
     # United Kingdom
     "uk": [
-        {"url": "http://feeds.bbci.co.uk/news/england/rss.xml", "source": "BBC England"},
-        {"url": "http://feeds.bbci.co.uk/news/scotland/rss.xml", "source": "BBC Scotland"},
-        {"url": "http://feeds.bbci.co.uk/news/wales/rss.xml", "source": "BBC Wales"},
-        {"url": "http://feeds.bbci.co.uk/news/northern_ireland/rss.xml", "source": "BBC N. Ireland"},
+        {"url": "https://feeds.bbci.co.uk/news/england/rss.xml", "source": "BBC England"},
+        {"url": "https://feeds.bbci.co.uk/news/scotland/rss.xml", "source": "BBC Scotland"},
+        {"url": "https://feeds.bbci.co.uk/news/wales/rss.xml", "source": "BBC Wales"},
+        {"url": "https://feeds.bbci.co.uk/news/northern_ireland/rss.xml", "source": "BBC N. Ireland"},
         {"url": "https://www.theguardian.com/uk-news/rss", "source": "The Guardian UK"},
     ],
     # Germany
@@ -823,7 +823,7 @@ async def get_location_news(
     async def fetch_regional_feed(feed_info: dict, country_id: str):
         """Fetch articles from a regional RSS feed"""
         try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
+            async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
                 response = await client.get(feed_info['url'], headers={
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
                 })
