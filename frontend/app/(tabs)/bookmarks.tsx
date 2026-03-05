@@ -34,7 +34,17 @@ export default function BookmarksScreen() {
     if (bookmarks.length === 0) return;
     Alert.alert('Clear All Bookmarks', 'Are you sure you want to remove all saved articles?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Clear All', style: 'destructive', onPress: async () => { await clearAllBookmarks(); setBookmarks([]); } },
+      { 
+        text: 'Clear All', 
+        style: 'destructive', 
+        onPress: () => {
+          clearAllBookmarks().then(() => {
+            setBookmarks([]);
+          }).catch(err => {
+            console.error('Error clearing bookmarks:', err);
+          });
+        } 
+      },
     ]);
   };
 

@@ -70,7 +70,8 @@ export const isBookmarked = async (articleId: string): Promise<boolean> => {
 
 export const clearAllBookmarks = async (): Promise<boolean> => {
   try {
-    await secureStorage.deleteItem(BOOKMARKS_KEY);
+    // Set to empty array instead of deleting, to avoid any null issues
+    await secureStorage.setItem(BOOKMARKS_KEY, JSON.stringify([]));
     return true;
   } catch (error) {
     console.error('Error clearing bookmarks:', error);
