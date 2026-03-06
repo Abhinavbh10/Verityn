@@ -18,6 +18,7 @@ import {
   saveLocationPreferences, 
   EUROPEAN_COUNTRIES,
 } from '../../src/utils/locations';
+import { VeritynLoader } from '../../src/components/VeritynLoader';
 
 interface UserLocationPreference {
   countries: string[];
@@ -41,7 +42,7 @@ const CATEGORIES = [
   { id: 'science', color: '#0891B2' },
 ];
 
-const API_BASE_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL || '';
+const API_BASE_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL || 'https://cards-feed-demo.preview.emergentagent.com';
 
 export default function ForYouScreen() {
   const { colors, isDark } = useTheme();
@@ -405,15 +406,22 @@ export default function ForYouScreen() {
     </Modal>
   );
 
+  // Generate contextual loading message
+  const getLoadingMessage = () => {
+    if (activeTab === 'region' && locationPrefs.countries.length > 0) {
+      const countryNames = locationPrefs.countries.map(id => 
+        EUROPEAN_COUNTRIES.find(c => c.id === id)?.name || id
+      ).join(', ');
+      return `Finding news from ${countryNames}...`;
+    }
+    if (keywords.length > 0) {
+      return `Searching for "${keywords[0]}"${keywords.length > 1 ? ` and ${keywords.length - 1} more...` : '...'}`;
+    }
+    return "Finding news for you...";
+  };
+
   if (loading && (keywords.length > 0 || locationPrefs.countries.length > 0)) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.loadingText, { color: colors.textMuted }]}>Finding news for you...</Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <VeritynLoader message={getLoadingMessage()} showTips={false} />;
   }
 
   return (

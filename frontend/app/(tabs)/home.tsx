@@ -49,13 +49,6 @@ const getReadTime = (description: string) => {
 };
 
 // Get greeting based on time of day
-const getGreeting = () => {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Good Morning';
-  if (hour < 17) return 'Good Afternoon';
-  return 'Good Evening';
-};
-
 // Get category color helper
 const getCategoryColor = (categoryId: string) => CATEGORIES.find(c => c.id === categoryId.toLowerCase())?.color || '#78716C';
 
@@ -236,16 +229,39 @@ export default function HomeScreen() {
     loadPreferencesAndFetch(); 
   }, []);
 
-  // Reload bookmarks every time the screen comes into focus
+  // Reload bookmarks and check for preference changes when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       loadBookmarks();
+      // Check if preferences changed and reload news
+      checkAndReloadPreferences();
     }, [])
   );
 
   const loadBookmarks = async () => {
     const bookmarks = await getBookmarks();
     setBookmarkedIds(new Set(bookmarks.map(b => b.id)));
+  };
+
+  const checkAndReloadPreferences = async () => {
+    try {
+      const preferences = await getPreferences();
+      if (preferences) {
+        const newCategories = preferences.categories || [];
+        // Check if categories changed
+        const categoriesChanged = 
+          newCategories.length !== selectedCategories.length ||
+          !newCategories.every(cat => selectedCategories.includes(cat));
+        
+        if (categoriesChanged && selectedCategories.length > 0) {
+          setSelectedCategories(newCategories);
+          setActiveFilter('all');
+          await fetchNews(newCategories, 0, true);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking preferences:', error);
+    }
   };
 
   const loadPreferencesAndFetch = async () => {
@@ -396,6 +412,14 @@ export default function HomeScreen() {
     }
   };
 
+  // Scroll to top when changing filters
+  const handleFilterChange = (filter: string) => {
+    setActiveFilter(filter);
+    setCurrentIndex(0);
+    // Scroll FlatList to top
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+  };
+
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
 
   // Use a ref to store the latest callback to avoid FlatList warning
@@ -428,13 +452,9 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
-      {/* Header with Greeting */}
+      {/* Header - Clean */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View>
-          <Text style={[styles.greetingText, { color: colors.textMuted }]}>{getGreeting()}</Text>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Verityn</Text>
-        </View>
-        <Text style={[styles.headerSubtitle, { color: colors.primary }]}>Global News</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Verityn</Text>
       </View>
 
       {/* Category Tabs - Enhanced */}
@@ -445,7 +465,7 @@ export default function HomeScreen() {
               styles.tab, 
               activeFilter === 'all' && [styles.tabActive, { backgroundColor: colors.primaryLight }]
             ]} 
-            onPress={() => { setActiveFilter('all'); setCurrentIndex(0); }}
+            onPress={() => handleFilterChange('all')}
             data-testid="tab-my-feed"
           >
             <Text style={[
@@ -465,7 +485,7 @@ export default function HomeScreen() {
                   styles.tab, 
                   isActive && [styles.tabActive, { backgroundColor: `${category.color}15` }]
                 ]} 
-                onPress={() => { setActiveFilter(catId); setCurrentIndex(0); }}
+                onPress={() => handleFilterChange(catId)}
                 data-testid={`tab-${catId}`}
               >
                 <Text style={[
@@ -589,27 +609,13 @@ const styles = StyleSheet.create({
   // Header - Enhanced
   header: { 
     paddingHorizontal: 20, 
-    paddingVertical: 14,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-  },
-  greetingText: { 
-    fontSize: 13, 
-    fontWeight: '500',
-    letterSpacing: 0.3,
-    marginBottom: 2,
   },
   headerTitle: { 
-    fontSize: 26, 
+    fontSize: 28, 
     fontWeight: '700',
     letterSpacing: -0.5,
-  },
-  headerSubtitle: { 
-    fontSize: 13, 
-    fontWeight: '600',
-    letterSpacing: 0.5,
   },
   
   // Category Tabs - Pill style
