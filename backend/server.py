@@ -151,77 +151,121 @@ REGIONAL_RSS_FEEDS = {
         {"url": "https://feeds.bbci.co.uk/news/wales/rss.xml", "source": "BBC Wales"},
         {"url": "https://feeds.bbci.co.uk/news/northern_ireland/rss.xml", "source": "BBC N. Ireland"},
         {"url": "https://www.theguardian.com/uk-news/rss", "source": "The Guardian UK"},
+        {"url": "https://feeds.skynews.com/feeds/rss/uk.xml", "source": "Sky News UK"},
     ],
     # Germany
     "germany": [
         {"url": "https://rss.dw.com/rdf/rss-en-ger", "source": "DW Germany"},
-        {"url": "https://www.thelocal.de/feed", "source": "The Local DE"},
+        {"url": "https://www.reuters.com/rssFeed/GCA-Germany", "source": "Reuters Germany"},
     ],
     # France
     "france": [
-        {"url": "https://www.thelocal.fr/feed", "source": "The Local FR"},
         {"url": "https://www.france24.com/en/rss", "source": "France 24"},
+        {"url": "https://www.rfi.fr/en/rss", "source": "RFI English"},
     ],
     # Spain
     "spain": [
-        {"url": "https://www.thelocal.es/feed", "source": "The Local ES"},
         {"url": "https://english.elpais.com/rss/elpais/inenglish.xml", "source": "El Pais English"},
+        {"url": "https://feeds.feedburner.com/spanishnewstoday", "source": "Spanish News Today"},
     ],
     # Italy
     "italy": [
-        {"url": "https://www.thelocal.it/feed", "source": "The Local IT"},
+        {"url": "https://www.ansa.it/english/news/rss.xml", "source": "ANSA Italy"},
+        {"url": "https://www.reuters.com/rssFeed/GCA-Italy", "source": "Reuters Italy"},
     ],
     # Netherlands
     "netherlands": [
         {"url": "https://www.dutchnews.nl/feed/", "source": "Dutch News"},
+        {"url": "https://nltimes.nl/feed", "source": "NL Times"},
     ],
     # Ireland
     "ireland": [
         {"url": "https://www.irishtimes.com/rss/news/ireland.xml", "source": "Irish Times"},
         {"url": "http://feeds.bbci.co.uk/news/northern_ireland/rss.xml", "source": "BBC N. Ireland"},
+        {"url": "https://www.rte.ie/news/rss/news-headlines.xml", "source": "RTE News"},
     ],
     # Switzerland
     "switzerland": [
-        {"url": "https://www.thelocal.ch/feed", "source": "The Local CH"},
         {"url": "https://www.swissinfo.ch/eng/news/rss", "source": "SwissInfo"},
     ],
     # Austria
     "austria": [
-        {"url": "https://www.thelocal.at/feed", "source": "The Local AT"},
+        {"url": "https://www.reuters.com/rssFeed/GCA-Austria", "source": "Reuters Austria"},
     ],
-    # Norway
+    # Scandinavia
     "norway": [
-        {"url": "https://www.thelocal.no/feed", "source": "The Local NO"},
+        {"url": "https://www.newsinenglish.no/feed/", "source": "News in English NO"},
     ],
-    # Sweden
     "sweden": [
         {"url": "https://www.thelocal.se/feed", "source": "The Local SE"},
     ],
-    # Denmark
     "denmark": [
-        {"url": "https://www.thelocal.dk/feed", "source": "The Local DK"},
+        {"url": "https://cphpost.dk/feed/", "source": "Copenhagen Post"},
+    ],
+    # USA Regions
+    "usa": [
+        {"url": "https://rss.nytimes.com/services/xml/rss/nyt/US.xml", "source": "NY Times US"},
+        {"url": "https://feeds.npr.org/1003/rss.xml", "source": "NPR US"},
+        {"url": "https://feeds.washingtonpost.com/rss/national", "source": "Washington Post"},
+        {"url": "https://www.latimes.com/local/rss2.0.xml", "source": "LA Times"},
+        {"url": "https://www.sfchronicle.com/bayarea/feed/Bay-Area-News-702.php", "source": "SF Chronicle"},
+    ],
+    "new york": [
+        {"url": "https://rss.nytimes.com/services/xml/rss/nyt/NYRegion.xml", "source": "NY Times Metro"},
+        {"url": "https://gothamist.com/feed", "source": "Gothamist"},
+    ],
+    "california": [
+        {"url": "https://www.latimes.com/local/rss2.0.xml", "source": "LA Times Local"},
+        {"url": "https://www.sfchronicle.com/bayarea/feed/Bay-Area-News-702.php", "source": "SF Chronicle"},
+    ],
+    "texas": [
+        {"url": "https://www.texastribune.org/feeds/articles.rss", "source": "Texas Tribune"},
+    ],
+    "florida": [
+        {"url": "https://www.miamiherald.com/news/local/feed/rss.xml", "source": "Miami Herald"},
+    ],
+    # Canada
+    "canada": [
+        {"url": "https://www.cbc.ca/cmlink/rss-topstories", "source": "CBC News"},
+        {"url": "https://globalnews.ca/feed/", "source": "Global News CA"},
+    ],
+    # Australia
+    "australia": [
+        {"url": "https://www.abc.net.au/news/feed/51120/rss.xml", "source": "ABC Australia"},
+        {"url": "https://www.smh.com.au/rss/feed.xml", "source": "Sydney Morning Herald"},
+    ],
+    # India
+    "india": [
+        {"url": "https://timesofindia.indiatimes.com/rssfeedstopstories.cms", "source": "Times of India"},
+        {"url": "https://www.thehindu.com/news/national/feeder/default.rss", "source": "The Hindu"},
     ],
 }
 
 # City keywords for filtering
 CITY_KEYWORDS = {
+    # UK Cities
     "london": ["london", "westminster", "city of london", "greater london"],
     "manchester": ["manchester", "greater manchester"],
     "birmingham": ["birmingham", "west midlands"],
     "edinburgh": ["edinburgh", "scottish capital"],
     "glasgow": ["glasgow"],
     "liverpool": ["liverpool", "merseyside"],
+    # German Cities
     "berlin": ["berlin"],
     "munich": ["munich", "münchen", "bavaria"],
     "frankfurt": ["frankfurt"],
     "hamburg": ["hamburg"],
+    # French Cities
     "paris": ["paris", "ile-de-france"],
     "lyon": ["lyon"],
     "marseille": ["marseille"],
+    # Spanish Cities
     "madrid": ["madrid"],
     "barcelona": ["barcelona", "catalonia", "catalunya"],
+    # Italian Cities
     "rome": ["rome", "roma"],
     "milan": ["milan", "milano"],
+    # Other European Cities
     "amsterdam": ["amsterdam"],
     "rotterdam": ["rotterdam"],
     "dublin": ["dublin"],
@@ -237,6 +281,35 @@ CITY_KEYWORDS = {
     "athens": ["athens", "athina"],
     "lisbon": ["lisbon", "lisboa"],
     "brussels": ["brussels", "bruxelles"],
+    # US Cities
+    "new york": ["new york", "nyc", "manhattan", "brooklyn", "queens", "bronx"],
+    "los angeles": ["los angeles", "la", "hollywood", "beverly hills"],
+    "chicago": ["chicago", "illinois"],
+    "houston": ["houston", "texas"],
+    "phoenix": ["phoenix", "arizona"],
+    "philadelphia": ["philadelphia", "philly"],
+    "san antonio": ["san antonio"],
+    "san diego": ["san diego"],
+    "dallas": ["dallas", "fort worth"],
+    "san francisco": ["san francisco", "sf", "bay area", "silicon valley"],
+    "austin": ["austin", "texas"],
+    "seattle": ["seattle", "washington"],
+    "denver": ["denver", "colorado"],
+    "boston": ["boston", "massachusetts"],
+    "miami": ["miami", "florida"],
+    "atlanta": ["atlanta", "georgia"],
+    "washington dc": ["washington dc", "dc", "capitol", "white house"],
+    # Canadian Cities
+    "toronto": ["toronto", "ontario"],
+    "vancouver": ["vancouver", "bc", "british columbia"],
+    "montreal": ["montreal", "quebec"],
+    # Australian Cities
+    "sydney": ["sydney", "nsw"],
+    "melbourne": ["melbourne", "victoria"],
+    # Indian Cities
+    "mumbai": ["mumbai", "bombay", "maharashtra"],
+    "delhi": ["delhi", "new delhi"],
+    "bangalore": ["bangalore", "bengaluru", "karnataka"],
 }
 
 # European RSS Feed Sources organized by category

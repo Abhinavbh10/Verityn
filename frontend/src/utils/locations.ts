@@ -12,6 +12,7 @@ export interface Country {
 }
 
 export const EUROPEAN_COUNTRIES: Country[] = [
+  // Europe
   { id: 'uk', name: 'United Kingdom', flag: '🇬🇧', cities: ['London', 'Manchester', 'Birmingham', 'Edinburgh', 'Glasgow', 'Liverpool', 'Bristol', 'Leeds'] },
   { id: 'germany', name: 'Germany', flag: '🇩🇪', cities: ['Berlin', 'Munich', 'Frankfurt', 'Hamburg', 'Cologne', 'Stuttgart', 'Düsseldorf', 'Leipzig'] },
   { id: 'france', name: 'France', flag: '🇫🇷', cities: ['Paris', 'Lyon', 'Marseille', 'Toulouse', 'Nice', 'Bordeaux', 'Strasbourg', 'Lille'] },
@@ -30,6 +31,12 @@ export const EUROPEAN_COUNTRIES: Country[] = [
   { id: 'poland', name: 'Poland', flag: '🇵🇱', cities: ['Warsaw', 'Krakow', 'Gdansk', 'Wroclaw', 'Poznan'] },
   { id: 'czechia', name: 'Czech Republic', flag: '🇨🇿', cities: ['Prague', 'Brno', 'Ostrava', 'Pilsen'] },
   { id: 'greece', name: 'Greece', flag: '🇬🇷', cities: ['Athens', 'Thessaloniki', 'Patras', 'Heraklion'] },
+  // North America
+  { id: 'usa', name: 'United States', flag: '🇺🇸', cities: ['New York', 'Los Angeles', 'Chicago', 'Houston', 'San Francisco', 'Miami', 'Boston', 'Seattle', 'Washington DC', 'Atlanta', 'Denver', 'Dallas', 'Austin', 'San Diego', 'Phoenix'] },
+  { id: 'canada', name: 'Canada', flag: '🇨🇦', cities: ['Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Ottawa', 'Edmonton'] },
+  // Asia Pacific
+  { id: 'australia', name: 'Australia', flag: '🇦🇺', cities: ['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide'] },
+  { id: 'india', name: 'India', flag: '🇮🇳', cities: ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad'] },
 ];
 
 export interface UserLocationPreference {
