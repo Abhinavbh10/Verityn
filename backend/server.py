@@ -150,7 +150,6 @@ REGIONAL_RSS_FEEDS = {
         {"url": "https://feeds.bbci.co.uk/news/scotland/rss.xml", "source": "BBC Scotland"},
         {"url": "https://feeds.bbci.co.uk/news/wales/rss.xml", "source": "BBC Wales"},
         {"url": "https://feeds.bbci.co.uk/news/northern_ireland/rss.xml", "source": "BBC N. Ireland"},
-        {"url": "https://www.theguardian.com/uk-news/rss", "source": "The Guardian UK"},
         {"url": "https://feeds.skynews.com/feeds/rss/uk.xml", "source": "Sky News UK"},
     ],
     # Germany
@@ -318,7 +317,6 @@ RSS_FEEDS = {
     "politics": [
         # European Sources
         {"url": "http://feeds.bbci.co.uk/news/politics/rss.xml", "source": "BBC Politics"},
-        {"url": "https://www.theguardian.com/politics/rss", "source": "The Guardian Politics"},
         {"url": "https://rss.dw.com/rdf/rss-en-eu", "source": "DW Europe"},
         {"url": "https://www.euronews.com/rss?level=theme&name=news", "source": "Euronews"},
         {"url": "https://www.politico.eu/feed/", "source": "Politico EU"},
@@ -329,14 +327,12 @@ RSS_FEEDS = {
         {"url": "https://feeds.npr.org/1014/rss.xml", "source": "NPR Politics"},
         # Global Sources
         {"url": "http://feeds.bbci.co.uk/news/world/rss.xml", "source": "BBC World"},
-        {"url": "https://www.theguardian.com/world/rss", "source": "The Guardian World"},
         {"url": "https://www.aljazeera.com/xml/rss/all.xml", "source": "Al Jazeera"},
         {"url": "https://feeds.reuters.com/reuters/topNews", "source": "Reuters"},
     ],
     "business": [
         # European Sources
         {"url": "http://feeds.bbci.co.uk/news/business/rss.xml", "source": "BBC Business"},
-        {"url": "https://www.theguardian.com/uk/business/rss", "source": "The Guardian Business"},
         {"url": "https://rss.dw.com/rdf/rss-en-bus", "source": "DW Business"},
         {"url": "https://feeds.skynews.com/feeds/rss/business.xml", "source": "Sky News Business"},
         {"url": "https://www.ft.com/rss/home/uk", "source": "Financial Times"},
@@ -352,7 +348,6 @@ RSS_FEEDS = {
     "technology": [
         # European Sources
         {"url": "http://feeds.bbci.co.uk/news/technology/rss.xml", "source": "BBC Technology"},
-        {"url": "https://www.theguardian.com/uk/technology/rss", "source": "The Guardian Tech"},
         {"url": "https://rss.dw.com/rdf/rss-en-sci", "source": "DW Science & Tech"},
         {"url": "https://www.techradar.com/rss", "source": "TechRadar"},
         {"url": "https://www.politico.eu/section/technology/feed/", "source": "Politico EU Tech"},
@@ -367,7 +362,6 @@ RSS_FEEDS = {
     "sports": [
         # European Sources
         {"url": "http://feeds.bbci.co.uk/sport/rss.xml", "source": "BBC Sport"},
-        {"url": "https://www.theguardian.com/uk/sport/rss", "source": "The Guardian Sport"},
         {"url": "https://feeds.skynews.com/feeds/rss/sports.xml", "source": "Sky News Sport"},
         {"url": "https://www.euronews.com/rss?level=theme&name=sport", "source": "Euronews Sport"},
         # US & Global Sources
@@ -378,7 +372,6 @@ RSS_FEEDS = {
     "entertainment": [
         # European Sources
         {"url": "http://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml", "source": "BBC Entertainment"},
-        {"url": "https://www.theguardian.com/uk/culture/rss", "source": "The Guardian Culture"},
         {"url": "https://rss.dw.com/rdf/rss-en-cul", "source": "DW Culture"},
         {"url": "https://www.euronews.com/rss?level=theme&name=culture", "source": "Euronews Culture"},
         # US & Global Sources
@@ -390,7 +383,6 @@ RSS_FEEDS = {
     "health": [
         # European Sources
         {"url": "http://feeds.bbci.co.uk/news/health/rss.xml", "source": "BBC Health"},
-        {"url": "https://www.theguardian.com/lifeandstyle/health-and-wellbeing/rss", "source": "The Guardian Health"},
         {"url": "https://rss.dw.com/rdf/rss-en-health", "source": "DW Health"},
         # US & Global Sources
         {"url": "https://rss.nytimes.com/services/xml/rss/nyt/Health.xml", "source": "NY Times Health"},
@@ -401,7 +393,6 @@ RSS_FEEDS = {
     "science": [
         # European Sources
         {"url": "http://feeds.bbci.co.uk/news/science_and_environment/rss.xml", "source": "BBC Science"},
-        {"url": "https://www.theguardian.com/science/rss", "source": "The Guardian Science"},
         {"url": "https://rss.dw.com/rdf/rss-en-sci", "source": "DW Science"},
         {"url": "https://www.newscientist.com/feed/home/", "source": "New Scientist"},
         # US & Global Sources
