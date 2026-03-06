@@ -141,7 +141,7 @@ export default function WelcomeScreen() {
           </Text>
         </View>
 
-        {/* Categories Grid - New Design */}
+        {/* Categories Grid - Clean Design */}
         <View style={styles.categoriesSection}>
           <Text style={styles.sectionTitle}>Choose Your Interests</Text>
           <View style={styles.categoriesGrid}>
@@ -153,7 +153,7 @@ export default function WelcomeScreen() {
                   style={[
                     styles.categoryCard,
                     { borderColor: isSelected ? category.color : '#E7E5E4' },
-                    isSelected && { backgroundColor: `${category.color}08` }
+                    isSelected && { borderWidth: 3 }
                   ]}
                   onPress={() => toggleCategory(category.id)}
                   activeOpacity={0.7}
@@ -161,7 +161,7 @@ export default function WelcomeScreen() {
                   {/* Icon with colored circle background */}
                   <View style={[
                     styles.iconCircle, 
-                    { backgroundColor: `${category.color}15` }
+                    { backgroundColor: `${category.color}20` }
                   ]}>
                     <Ionicons name={category.icon as any} size={26} color={category.color} />
                   </View>
@@ -174,10 +174,10 @@ export default function WelcomeScreen() {
                     {category.name}
                   </Text>
                   
-                  {/* Selection indicator - corner ribbon style */}
+                  {/* Selection indicator - simple circle checkmark */}
                   {isSelected && (
-                    <View style={[styles.selectedRibbon, { backgroundColor: category.color }]}>
-                      <Ionicons name="checkmark" size={12} color="#fff" />
+                    <View style={[styles.checkCircle, { backgroundColor: category.color }]}>
+                      <Ionicons name="checkmark" size={14} color="#fff" />
                     </View>
                   )}
                 </TouchableOpacity>
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
   categoryCard: {
     width: '48%', backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16,
     marginBottom: 12, borderWidth: 2.5, borderColor: '#E7E5E4', position: 'relative',
-    alignItems: 'center', overflow: 'hidden',
+    alignItems: 'center',
     shadowColor: '#44403C', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
   },
   iconCircle: {
@@ -247,12 +247,10 @@ const styles = StyleSheet.create({
     alignItems: 'center', marginBottom: 10,
   },
   categoryName: { fontSize: 14, fontWeight: '600', color: '#57534E', textAlign: 'center' },
-  selectedRibbon: {
-    position: 'absolute', top: 0, right: 0,
-    width: 28, height: 28, 
-    borderBottomLeftRadius: 12,
+  checkCircle: {
+    position: 'absolute', top: 8, right: 8,
+    width: 24, height: 24, borderRadius: 12,
     justifyContent: 'center', alignItems: 'center',
-    paddingLeft: 2, paddingTop: 2,
   },
   selectionInfo: { textAlign: 'center', fontSize: 14, color: '#A8A29E', marginBottom: 24 },
   continueButton: {

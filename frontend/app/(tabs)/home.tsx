@@ -38,7 +38,7 @@ const CATEGORIES: Category[] = [
   { id: 'science', name: 'Science', icon: 'flask', color: '#0891B2' },
 ];
 
-const API_BASE_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL || '';
+const API_BASE_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL || 'https://cards-feed-demo.preview.emergentagent.com';
 
 // Estimate read time based on description length
 const getReadTime = (description: string) => {
@@ -479,11 +479,20 @@ export default function HomeScreen() {
         </ScrollView>
       </View>
 
-      {/* Error State */}
+      {/* Error State with Retry Button */}
       {error && (
         <View style={[styles.errorContainer, { backgroundColor: isDark ? '#422006' : '#FEF3C7' }]}>
-          <Ionicons name="alert-circle" size={24} color={colors.primary} />
-          <Text style={[styles.errorText, { color: colors.primary }]}>{error}</Text>
+          <View style={styles.errorContent}>
+            <Ionicons name="alert-circle" size={24} color={colors.primary} />
+            <Text style={[styles.errorText, { color: colors.primary }]}>{error}</Text>
+          </View>
+          <TouchableOpacity 
+            style={[styles.retryButton, { backgroundColor: colors.primary }]}
+            onPress={onRefresh}
+          >
+            <Ionicons name="refresh" size={16} color="#fff" />
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -616,18 +625,36 @@ const styles = StyleSheet.create({
   },
   tabText: { fontSize: 14, fontWeight: '500' },
   
-  // Error - Warm colors
+  // Error - Warm colors with Retry button
   errorContainer: { 
-    flexDirection: 'row', 
+    flexDirection: 'column', 
     alignItems: 'center', 
     justifyContent: 'center', 
-    padding: 14, 
+    padding: 20, 
     marginHorizontal: 16, 
     marginTop: 12, 
     borderRadius: 12, 
-    gap: 10 
+    gap: 12 
+  },
+  errorContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   errorText: { fontSize: 14, fontWeight: '500' },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
   
   // Cards Container
   cardsContainer: { flex: 1 },
