@@ -16,6 +16,7 @@ import { useTheme } from '../../src/utils/theme';
 import { saveArticleOffline, isArticleSavedOffline } from '../../src/utils/offline';
 import { useShakeDetector } from '../../src/hooks/useShakeDetector';
 import { VeritynLoader } from '../../src/components/VeritynLoader';
+import { TabRefreshEvents } from '../../src/utils/tabRefresh';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const CARD_HEIGHT = SCREEN_HEIGHT - 180;
@@ -228,6 +229,16 @@ export default function HomeScreen() {
   useEffect(() => { 
     loadPreferencesAndFetch(); 
   }, []);
+
+  // Subscribe to tab press refresh events
+  useEffect(() => {
+    const unsubscribe = TabRefreshEvents.subscribe('home', () => {
+      // Scroll to top and refresh
+      flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+      onRefresh();
+    });
+    return unsubscribe;
+  }, [selectedCategories]);
 
   // Reload bookmarks and check for preference changes when screen comes into focus
   useFocusEffect(

@@ -1,19 +1,18 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Platform, Dimensions } from 'react-native';
+import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../src/utils/theme';
+import { TabRefreshEvents } from '../../src/utils/tabRefresh';
 
 export default function TabLayout() {
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   
   // More robust bottom padding calculation for Android devices with gesture navigation
-  // On Android, insets.bottom is 0 for 3-button nav but we still need padding
-  // For gesture navigation, insets.bottom gives us the gesture bar height
   const androidBottomPadding = Platform.OS === 'android' 
-    ? Math.max(insets.bottom, 8) + 12  // Minimum 20px padding on Android
+    ? Math.max(insets.bottom, 8) + 12
     : 0;
   
   const iosBottomPadding = Platform.OS === 'ios' ? insets.bottom : 0;
@@ -24,7 +23,6 @@ export default function TabLayout() {
     default: 8,
   });
   
-  // Tab bar height: base height + bottom padding for system navigation
   const tabBarHeight = Platform.select({
     android: 60 + androidBottomPadding,
     ios: 50 + iosBottomPadding + 8,
@@ -42,7 +40,6 @@ export default function TabLayout() {
           height: tabBarHeight,
           paddingBottom: bottomPadding,
           paddingTop: 8,
-          // Ensure tab bar is above Android navigation
           position: 'absolute',
           bottom: 0,
           left: 0,
@@ -69,6 +66,11 @@ export default function TabLayout() {
             <Ionicons name="home" size={size} color={color} />
           ),
         }}
+        listeners={{
+          tabPress: (e) => {
+            TabRefreshEvents.emit('home');
+          },
+        }}
       />
       <Tabs.Screen
         name="foryou"
@@ -77,6 +79,11 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="sparkles" size={size} color={color} />
           ),
+        }}
+        listeners={{
+          tabPress: (e) => {
+            TabRefreshEvents.emit('foryou');
+          },
         }}
       />
       <Tabs.Screen
@@ -95,6 +102,11 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="bookmark" size={size} color={color} />
           ),
+        }}
+        listeners={{
+          tabPress: (e) => {
+            TabRefreshEvents.emit('bookmarks');
+          },
         }}
       />
       <Tabs.Screen

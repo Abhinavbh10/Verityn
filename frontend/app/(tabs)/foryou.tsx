@@ -67,6 +67,14 @@ export default function ForYouScreen() {
     loadAll(); 
   }, []));
 
+  // Subscribe to tab press refresh events
+  useEffect(() => {
+    const unsubscribe = TabRefreshEvents.subscribe('foryou', () => {
+      loadAll();
+    });
+    return unsubscribe;
+  }, []);
+
   const loadAll = async () => {
     await Promise.all([loadBookmarks(), loadKeywordsAndFetch(), loadLocationPrefsAndFetch()]);
   };
