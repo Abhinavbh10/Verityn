@@ -56,6 +56,143 @@ const getGreeting = () => {
   return 'Good Evening';
 };
 
+// Get category color helper
+const getCategoryColor = (categoryId: string) => CATEGORIES.find(c => c.id === categoryId.toLowerCase())?.color || '#78716C';
+
+// Separate ArticleCard component to properly use hooks
+interface ArticleCardProps {
+  item: Article;
+  index: number;
+  colors: any;
+  isDark: boolean;
+  isBookmarked: boolean;
+  bookmarkScale: Animated.Value;
+  onBookmarkToggle: (article: Article) => void;
+  onShare: (article: Article) => void;
+  onOpenArticle: (url: string, article?: Article) => void;
+}
+
+const ArticleCard = React.memo(({ 
+  item, 
+  index, 
+  colors, 
+  isDark,
+  isBookmarked,
+  bookmarkScale,
+  onBookmarkToggle,
+  onShare,
+  onOpenArticle
+}: ArticleCardProps) => {
+  const [imageError, setImageError] = useState(false);
+  const categoryColor = getCategoryColor(item.category);
+  const readTime = getReadTime(item.description);
+  
+  const getTimeAgo = (dateString: string) => {
+    try { 
+      const date = parseISO(dateString); 
+      if (isValid(date)) return formatDistanceToNow(date, { addSuffix: false }); 
+    }
+    catch {} return '';
+  };
+  
+  const timeAgo = getTimeAgo(item.published);
+
+  return (
+    <View style={[styles.inshortsCard, { backgroundColor: colors.background }]}>
+      {/* Image Section with Gradient Overlay */}
+      <TouchableOpacity 
+        style={styles.imageContainer}
+        onPress={() => onOpenArticle(item.link, item)}
+        activeOpacity={0.95}
+        data-testid={`article-image-${index}`}
+      >
+        {item.image_url && !imageError ? (
+          <Image 
+            source={{ uri: item.image_url }} 
+            style={styles.inshortsImage} 
+            resizeMode="cover"
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <View style={[styles.imagePlaceholder, { backgroundColor: `${categoryColor}15` }]}>
+            <View style={[styles.placeholderIconCircle, { backgroundColor: `${categoryColor}20` }]}>
+              <Ionicons name="newspaper" size={40} color={categoryColor} />
+            </View>
+            <Text style={[styles.placeholderSource, { color: categoryColor }]}>{item.source}</Text>
+          </View>
+        )}
+        
+        {/* Gradient Overlay */}
+        <View style={styles.imageGradient} />
+        
+        {/* Source Badge & Actions Overlay */}
+        <View style={styles.imageOverlay}>
+          <View style={[styles.sourceBadge, { backgroundColor: 'rgba(253,248,243,0.95)' }]}>
+            <Ionicons name="globe-outline" size={13} color="#292524" />
+            <Text style={[styles.sourceBadgeText, { color: '#292524' }]}>{item.source}</Text>
+          </View>
+          
+          <View style={styles.imageActions}>
+            <TouchableOpacity 
+              style={[styles.imageActionBtn, { backgroundColor: 'rgba(253,248,243,0.9)' }]}
+              onPress={() => onBookmarkToggle(item)}
+              data-testid={`bookmark-btn-${index}`}
+            >
+              <Animated.View style={{ transform: [{ scale: bookmarkScale }] }}>
+                <Ionicons 
+                  name={isBookmarked ? 'bookmark' : 'bookmark-outline'} 
+                  size={20} 
+                  color={isBookmarked ? colors.primary : '#44403C'} 
+                />
+              </Animated.View>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.imageActionBtn, { backgroundColor: 'rgba(253,248,243,0.9)' }]}
+              onPress={() => onShare(item)}
+              data-testid={`share-btn-${index}`}
+            >
+              <Ionicons name="share-social-outline" size={20} color="#44403C" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </TouchableOpacity>
+
+      {/* Content Section */}
+      <View style={[styles.contentSection, { backgroundColor: colors.card }]}>
+        {/* Category, Time & Read Time Row */}
+        <View style={styles.metaRow}>
+          <View style={styles.metaLeft}>
+            <View style={[styles.categoryTag, { backgroundColor: `${categoryColor}18` }]}>
+              <Text style={[styles.categoryTagText, { color: categoryColor }]}>{item.category}</Text>
+            </View>
+            <View style={styles.readTimeBadge}>
+              <Ionicons name="time-outline" size={12} color={colors.textMuted} />
+              <Text style={[styles.readTimeText, { color: colors.textMuted }]}>{readTime}</Text>
+            </View>
+          </View>
+          <Text style={[styles.timeText, { color: colors.textMuted }]}>{timeAgo} ago</Text>
+        </View>
+
+        {/* Title - Enhanced typography */}
+        <Text style={[styles.inshortsTitle, { color: colors.text }]}>{item.title}</Text>
+        
+        {/* Description with inline Read More */}
+        <View style={styles.descriptionContainer}>
+          <Text style={[styles.inshortsDescription, { color: colors.textSecondary }]}>
+            {item.description}
+            <Text 
+              style={[styles.readMoreLink, { color: colors.primary }]} 
+              onPress={() => onOpenArticle(item.link, item)}
+            >
+              {' '}Read full story →
+            </Text>
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+});
+
 export default function HomeScreen() {
   const { colors, isDark } = useTheme();
   const [articles, setArticles] = useState<Article[]>([]);
@@ -184,16 +321,6 @@ export default function HomeScreen() {
     catch {} return dateString;
   };
 
-  const getTimeAgo = (dateString: string) => {
-    try { 
-      const date = parseISO(dateString); 
-      if (isValid(date)) return formatDistanceToNow(date, { addSuffix: false }); 
-    }
-    catch {} return '';
-  };
-
-  const getCategoryColor = (categoryId: string) => CATEGORIES.find(c => c.id === categoryId.toLowerCase())?.color || '#78716C';
-
   const filteredArticles = activeFilter === 'all' ? articles : articles.filter(a => a.category.toLowerCase() === activeFilter);
 
   // Handle scroll end to update counter (more reliable on web)
@@ -278,109 +405,22 @@ export default function HomeScreen() {
     }
   });
 
-  // European Elegance Card Component
-  const renderInshortsCard = ({ item, index }: { item: Article; index: number }) => {
-    const isBookmarked = bookmarkedIds.has(item.id);
-    const timeAgo = getTimeAgo(item.published);
-    const categoryColor = getCategoryColor(item.category);
-    const readTime = getReadTime(item.description);
-    const [imageError, setImageError] = React.useState(false);
-
+  // Render function using the ArticleCard component
+  const renderInshortsCard = useCallback(({ item, index }: { item: Article; index: number }) => {
     return (
-      <View style={[styles.inshortsCard, { backgroundColor: colors.background }]}>
-        {/* Image Section with Gradient Overlay */}
-        <TouchableOpacity 
-          style={styles.imageContainer}
-          onPress={() => openArticle(item.link, item)}
-          activeOpacity={0.95}
-          data-testid={`article-image-${index}`}
-        >
-          {item.image_url && !imageError ? (
-            <Image 
-              source={{ uri: item.image_url }} 
-              style={styles.inshortsImage} 
-              resizeMode="cover"
-              onError={() => setImageError(true)}
-            />
-          ) : (
-            <View style={[styles.imagePlaceholder, { backgroundColor: `${categoryColor}15` }]}>
-              <View style={[styles.placeholderIconCircle, { backgroundColor: `${categoryColor}20` }]}>
-                <Ionicons name="newspaper" size={40} color={categoryColor} />
-              </View>
-              <Text style={[styles.placeholderSource, { color: categoryColor }]}>{item.source}</Text>
-            </View>
-          )}
-          
-          {/* Gradient Overlay */}
-          <View style={styles.imageGradient} />
-          
-          {/* Source Badge & Actions Overlay */}
-          <View style={styles.imageOverlay}>
-            <View style={[styles.sourceBadge, { backgroundColor: 'rgba(253,248,243,0.95)' }]}>
-              <Ionicons name="globe-outline" size={13} color="#292524" />
-              <Text style={[styles.sourceBadgeText, { color: '#292524' }]}>{item.source}</Text>
-            </View>
-            
-            <View style={styles.imageActions}>
-              <TouchableOpacity 
-                style={[styles.imageActionBtn, { backgroundColor: 'rgba(253,248,243,0.9)' }]}
-                onPress={() => toggleBookmark(item)}
-                data-testid={`bookmark-btn-${index}`}
-              >
-                <Animated.View style={{ transform: [{ scale: bookmarkScale }] }}>
-                  <Ionicons 
-                    name={isBookmarked ? 'bookmark' : 'bookmark-outline'} 
-                    size={20} 
-                    color={isBookmarked ? colors.primary : '#44403C'} 
-                  />
-                </Animated.View>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.imageActionBtn, { backgroundColor: 'rgba(253,248,243,0.9)' }]}
-                onPress={() => shareArticle(item)}
-                data-testid={`share-btn-${index}`}
-              >
-                <Ionicons name="share-social-outline" size={20} color="#44403C" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </TouchableOpacity>
-
-        {/* Content Section */}
-        <View style={[styles.contentSection, { backgroundColor: colors.card }]}>
-          {/* Category, Time & Read Time Row */}
-          <View style={styles.metaRow}>
-            <View style={styles.metaLeft}>
-              <View style={[styles.categoryTag, { backgroundColor: `${categoryColor}18` }]}>
-                <Text style={[styles.categoryTagText, { color: categoryColor }]}>{item.category}</Text>
-              </View>
-              <View style={styles.readTimeBadge}>
-                <Ionicons name="time-outline" size={12} color={colors.textMuted} />
-                <Text style={[styles.readTimeText, { color: colors.textMuted }]}>{readTime}</Text>
-              </View>
-            </View>
-            <Text style={[styles.timeText, { color: colors.textMuted }]}>{timeAgo} ago</Text>
-          </View>
-
-          {/* Title - Enhanced typography */}
-          <Text style={[styles.inshortsTitle, { color: colors.text }]}>{item.title}</Text>
-          
-          {/* Description with inline Read More */}
-          <View style={styles.descriptionContainer}>
-            <Text style={[styles.inshortsDescription, { color: colors.textSecondary }]}>
-              {item.description}
-              <Text 
-                style={[styles.readMoreLink, { color: colors.primary }]} 
-                onPress={() => openArticle(item.link, item)}
-              >
-                {' '}Read full story →
-              </Text>
-            </Text>
-          </View>
-        </View>
-      </View>
+      <ArticleCard
+        item={item}
+        index={index}
+        colors={colors}
+        isDark={isDark}
+        isBookmarked={bookmarkedIds.has(item.id)}
+        bookmarkScale={bookmarkScale}
+        onBookmarkToggle={toggleBookmark}
+        onShare={shareArticle}
+        onOpenArticle={openArticle}
+      />
     );
-  };
+  }, [colors, isDark, bookmarkedIds, bookmarkScale, toggleBookmark, shareArticle, openArticle]);
 
   if (loading) {
     return <VeritynLoader message="Loading your news..." showTips={true} />;
