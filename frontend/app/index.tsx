@@ -141,7 +141,7 @@ export default function WelcomeScreen() {
           </Text>
         </View>
 
-        {/* Categories Grid */}
+        {/* Categories Grid - New Design */}
         <View style={styles.categoriesSection}>
           <Text style={styles.sectionTitle}>Choose Your Interests</Text>
           <View style={styles.categoriesGrid}>
@@ -152,24 +152,32 @@ export default function WelcomeScreen() {
                   key={category.id}
                   style={[
                     styles.categoryCard,
-                    isSelected && styles.categoryCardSelected,
-                    isSelected && { borderColor: category.color }
+                    { borderColor: isSelected ? category.color : '#E7E5E4' },
+                    isSelected && { backgroundColor: `${category.color}08` }
                   ]}
                   onPress={() => toggleCategory(category.id)}
                   activeOpacity={0.7}
                 >
+                  {/* Icon with colored circle background */}
                   <View style={[
-                    styles.iconContainer, 
-                    { backgroundColor: isSelected ? 'transparent' : `${category.color}15` }
+                    styles.iconCircle, 
+                    { backgroundColor: `${category.color}15` }
                   ]}>
-                    <Ionicons name={category.icon as any} size={28} color={category.color} />
+                    <Ionicons name={category.icon as any} size={26} color={category.color} />
                   </View>
-                  <Text style={[styles.categoryName, isSelected && { color: category.color }]}>
+                  
+                  {/* Category name */}
+                  <Text style={[
+                    styles.categoryName, 
+                    isSelected && { color: category.color, fontWeight: '700' }
+                  ]}>
                     {category.name}
                   </Text>
+                  
+                  {/* Selection indicator - corner ribbon style */}
                   {isSelected && (
-                    <View style={[styles.checkmark, { backgroundColor: category.color }]}>
-                      <Ionicons name="checkmark" size={14} color="#fff" />
+                    <View style={[styles.selectedRibbon, { backgroundColor: category.color }]}>
+                      <Ionicons name="checkmark" size={12} color="#fff" />
                     </View>
                   )}
                 </TouchableOpacity>
@@ -229,21 +237,22 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 18, fontWeight: '600', color: '#292524', marginBottom: 16 },
   categoriesGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   categoryCard: {
-    width: '48%', backgroundColor: '#FFFFFF', borderRadius: 18, padding: 16,
-    marginBottom: 12, borderWidth: 2, borderColor: '#E7E5E4', position: 'relative',
-    shadowColor: '#44403C', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2,
+    width: '48%', backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16,
+    marginBottom: 12, borderWidth: 2.5, borderColor: '#E7E5E4', position: 'relative',
+    alignItems: 'center', overflow: 'hidden',
+    shadowColor: '#44403C', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
   },
-  categoryCardSelected: {
-    backgroundColor: 'transparent',
+  iconCircle: {
+    width: 56, height: 56, borderRadius: 28, justifyContent: 'center',
+    alignItems: 'center', marginBottom: 10,
   },
-  iconContainer: {
-    width: 52, height: 52, borderRadius: 14, justifyContent: 'center',
-    alignItems: 'center', marginBottom: 12, backgroundColor: 'transparent',
-  },
-  categoryName: { fontSize: 15, fontWeight: '600', color: '#57534E' },
-  checkmark: {
-    position: 'absolute', top: 12, right: 12, width: 24, height: 24,
-    borderRadius: 12, justifyContent: 'center', alignItems: 'center',
+  categoryName: { fontSize: 14, fontWeight: '600', color: '#57534E', textAlign: 'center' },
+  selectedRibbon: {
+    position: 'absolute', top: 0, right: 0,
+    width: 28, height: 28, 
+    borderBottomLeftRadius: 12,
+    justifyContent: 'center', alignItems: 'center',
+    paddingLeft: 2, paddingTop: 2,
   },
   selectionInfo: { textAlign: 'center', fontSize: 14, color: '#A8A29E', marginBottom: 24 },
   continueButton: {

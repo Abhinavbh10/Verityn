@@ -15,7 +15,7 @@ import { getPreferences } from '../../src/utils/storage';
 import { useTheme } from '../../src/utils/theme';
 import { saveArticleOffline, isArticleSavedOffline } from '../../src/utils/offline';
 import { useShakeDetector } from '../../src/hooks/useShakeDetector';
-import { logEvent, logScreenView, logError } from '../../src/utils/firebase';
+import { VeritynLoader } from '../../src/components/VeritynLoader';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const CARD_HEIGHT = SCREEN_HEIGHT - 180;
@@ -252,6 +252,7 @@ export default function HomeScreen() {
     const timeAgo = getTimeAgo(item.published);
     const categoryColor = getCategoryColor(item.category);
     const readTime = getReadTime(item.description);
+    const [imageError, setImageError] = React.useState(false);
 
     return (
       <View style={[styles.inshortsCard, { backgroundColor: colors.background }]}>
@@ -262,15 +263,19 @@ export default function HomeScreen() {
           activeOpacity={0.95}
           data-testid={`article-image-${index}`}
         >
-          {item.image_url ? (
+          {item.image_url && !imageError ? (
             <Image 
               source={{ uri: item.image_url }} 
               style={styles.inshortsImage} 
-              resizeMode="cover" 
+              resizeMode="cover"
+              onError={() => setImageError(true)}
             />
           ) : (
-            <View style={[styles.imagePlaceholder, { backgroundColor: colors.imagePlaceholder }]}>
-              <Ionicons name="newspaper" size={50} color={categoryColor} />
+            <View style={[styles.imagePlaceholder, { backgroundColor: `${categoryColor}15` }]}>
+              <View style={[styles.placeholderIconCircle, { backgroundColor: `${categoryColor}20` }]}>
+                <Ionicons name="newspaper" size={40} color={categoryColor} />
+              </View>
+              <Text style={[styles.placeholderSource, { color: categoryColor }]}>{item.source}</Text>
             </View>
           )}
           
@@ -346,14 +351,7 @@ export default function HomeScreen() {
   };
 
   if (loading) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.loadingText, { color: colors.textMuted }]}>Loading news...</Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <VeritynLoader message="Loading your news..." showTips={true} />;
   }
 
   return (
@@ -567,6 +565,19 @@ const styles = StyleSheet.create({
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
+    gap: 12,
+  },
+  placeholderIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholderSource: {
+    fontSize: 14,
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
   imageOverlay: {
     position: 'absolute',
