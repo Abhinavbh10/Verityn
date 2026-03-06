@@ -60,6 +60,7 @@ export default function HomeScreen() {
   const { colors, isDark } = useTheme();
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [activeFilter, setActiveFilter] = useState<string>('all');
@@ -68,7 +69,13 @@ export default function HomeScreen() {
   const [offlineIds, setOfflineIds] = useState<Set<string>>(new Set());
   const [currentIndex, setCurrentIndex] = useState(0);
   const [shakeMessage, setShakeMessage] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [currentOffset, setCurrentOffset] = useState(0);
   const flatListRef = useRef<FlatList>(null);
+  
+  // Pagination settings
+  const INITIAL_LOAD = 15;  // Fast initial load
+  const LOAD_MORE_COUNT = 15;  // Load more in batches
   
   // Animation values
   const bookmarkScale = useRef(new Animated.Value(1)).current;
@@ -90,8 +97,6 @@ export default function HomeScreen() {
   // Load preferences on mount
   useEffect(() => { 
     loadPreferencesAndFetch(); 
-    // Log screen view for analytics
-    logScreenView('home_screen');
   }, []);
 
   // Reload bookmarks every time the screen comes into focus
@@ -111,40 +116,67 @@ export default function HomeScreen() {
       const preferences = await getPreferences();
       if (preferences) {
         setSelectedCategories(preferences.categories || []);
-        await fetchNews(preferences.categories || []);
+        await fetchNews(preferences.categories || [], 0, true);
       }
     } catch (error: any) {
       console.error('Error loading preferences:', error);
-      logError(error, 'Error loading preferences');
       setError('Failed to load preferences');
       setLoading(false);
     }
   };
 
-  const fetchNews = async (categories: string[]) => {
+  const fetchNews = async (categories: string[], offset: number = 0, isInitial: boolean = false) => {
     try {
       setError(null);
-      const response = await fetch(`${API_BASE_URL}/api/news?categories=${categories.join(',')}&limit=50`);
+      if (isInitial) {
+        setLoading(true);
+        setArticles([]);
+        setCurrentOffset(0);
+      }
+      
+      const limit = isInitial ? INITIAL_LOAD : LOAD_MORE_COUNT;
+      const response = await fetch(
+        `${API_BASE_URL}/api/news?categories=${categories.join(',')}&limit=${limit}&offset=${offset}`
+      );
       if (!response.ok) throw new Error('Failed to fetch news');
       const data = await response.json();
-      setArticles(data.articles || []);
-      // Log successful news fetch
-      logEvent('news_loaded', { 
-        categories: categories.join(','), 
-        article_count: data.articles?.length || 0 
-      });
+      
+      if (isInitial) {
+        setArticles(data.articles || []);
+      } else {
+        // Append new articles, avoiding duplicates
+        setArticles(prev => {
+          const existingIds = new Set(prev.map(a => a.id));
+          const newArticles = (data.articles || []).filter((a: Article) => !existingIds.has(a.id));
+          return [...prev, ...newArticles];
+        });
+      }
+      
+      setHasMore(data.has_more);
+      setCurrentOffset(offset + (data.articles?.length || 0));
     } catch (error: any) {
       console.error('Error fetching news:', error);
-      logError(error, 'Error fetching news');
       setError('Unable to load news. Pull to refresh.');
-    } finally { setLoading(false); setRefreshing(false); }
+    } finally { 
+      setLoading(false); 
+      setRefreshing(false); 
+      setLoadingMore(false);
+    }
   };
+
+  const loadMoreNews = useCallback(async () => {
+    if (loadingMore || !hasMore || loading) return;
+    
+    setLoadingMore(true);
+    await fetchNews(selectedCategories, currentOffset, false);
+  }, [loadingMore, hasMore, loading, selectedCategories, currentOffset]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    logEvent('feed_refreshed', { method: 'pull_to_refresh' });
+    setCurrentOffset(0);
+    setHasMore(true);
     await loadBookmarks(); 
-    await fetchNews(selectedCategories);
+    await fetchNews(selectedCategories, 0, true);
   }, [selectedCategories]);
 
   const formatDate = (dateString: string) => {
@@ -432,20 +464,41 @@ export default function HomeScreen() {
             onMomentumScrollEnd={handleScrollEnd}
             onScrollEndDrag={handleScrollEnd}
             scrollEventThrottle={16}
+            onEndReached={loadMoreNews}
+            onEndReachedThreshold={0.5}
             ListFooterComponent={() => (
               <View style={[styles.endOfArticles, { backgroundColor: colors.background }]}>
-                <Ionicons name="checkmark-circle" size={48} color={colors.primary} />
-                <Text style={[styles.endTitle, { color: colors.text }]}>You're all caught up!</Text>
-                <Text style={[styles.endText, { color: colors.textMuted }]}>
-                  Pull down to refresh for new articles
-                </Text>
-                <TouchableOpacity 
-                  style={[styles.refreshButton, { backgroundColor: colors.primaryLight }]}
-                  onPress={onRefresh}
-                >
-                  <Ionicons name="refresh" size={18} color={colors.primary} />
-                  <Text style={[styles.refreshButtonText, { color: colors.primary }]}>Refresh</Text>
-                </TouchableOpacity>
+                {loadingMore ? (
+                  <>
+                    <ActivityIndicator size="large" color={colors.primary} />
+                    <Text style={[styles.endText, { color: colors.textMuted, marginTop: 16 }]}>
+                      Loading more stories...
+                    </Text>
+                  </>
+                ) : hasMore ? (
+                  <TouchableOpacity 
+                    style={[styles.refreshButton, { backgroundColor: colors.primaryLight }]}
+                    onPress={loadMoreNews}
+                  >
+                    <Ionicons name="chevron-down" size={18} color={colors.primary} />
+                    <Text style={[styles.refreshButtonText, { color: colors.primary }]}>Load More</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <>
+                    <Ionicons name="checkmark-circle" size={48} color={colors.primary} />
+                    <Text style={[styles.endTitle, { color: colors.text }]}>You're all caught up!</Text>
+                    <Text style={[styles.endText, { color: colors.textMuted }]}>
+                      Pull down to refresh for new articles
+                    </Text>
+                    <TouchableOpacity 
+                      style={[styles.refreshButton, { backgroundColor: colors.primaryLight }]}
+                      onPress={onRefresh}
+                    >
+                      <Ionicons name="refresh" size={18} color={colors.primary} />
+                      <Text style={[styles.refreshButtonText, { color: colors.primary }]}>Refresh</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
               </View>
             )}
             refreshControl={

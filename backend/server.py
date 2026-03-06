@@ -857,9 +857,10 @@ async def get_news(category: str, limit: int = Query(default=20, le=50)):
 @app.get("/api/news")
 async def get_news_multiple(
     categories: str = Query(..., description="Comma-separated list of categories"),
-    limit: int = Query(default=30, le=100)
+    limit: int = Query(default=15, le=100),
+    offset: int = Query(default=0, ge=0, description="Number of articles to skip for pagination")
 ):
-    """Get news from multiple categories"""
+    """Get news from multiple categories with pagination support"""
     category_list = [c.strip().lower() for c in categories.split(',')]
     valid_categories = list(RSS_FEEDS.keys())
     
@@ -889,10 +890,18 @@ async def get_news_multiple(
             seen_ids.add(article.id)
             unique_articles.append(article)
     
+    total = len(unique_articles)
+    # Apply pagination
+    paginated_articles = unique_articles[offset:offset + limit]
+    has_more = (offset + limit) < total
+    
     return {
-        "articles": unique_articles[:limit],
-        "total": len(unique_articles),
-        "categories": category_list
+        "articles": paginated_articles,
+        "total": total,
+        "categories": category_list,
+        "offset": offset,
+        "limit": limit,
+        "has_more": has_more
     }
 
 @app.get("/api/sources")
