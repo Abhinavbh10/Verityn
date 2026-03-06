@@ -16,26 +16,19 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.verityn.app",
-      "buildNumber": "1",
-      "infoPlist": {
-        "NSUserTrackingUsageDescription": "This helps us deliver relevant news and personalized content",
-        "UIBackgroundModes": ["remote-notification"]
-      }
+      "buildNumber": "1"
     },
     "android": {
       "package": "com.verityn.app",
-      "versionCode": 2,
+      "versionCode": 3,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#FDF8F3"
       },
-      "edgeToEdgeEnabled": true,
       "permissions": [
         "RECEIVE_BOOT_COMPLETED",
-        "VIBRATE",
-        "POST_NOTIFICATIONS"
-      ],
-      "googleServicesFile": "./google-services.json"
+        "VIBRATE"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -52,25 +45,13 @@
           "resizeMode": "contain",
           "backgroundColor": "#FDF8F3"
         }
-      ],
-      "@react-native-firebase/app",
-      "@react-native-firebase/analytics",
-      "@react-native-firebase/crashlytics",
-      [
-        "@react-native-firebase/messaging",
-        {
-          "messaging_android_notification_delegation_enabled": true
-        }
       ]
     ],
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
-      "EXPO_PUBLIC_BACKEND_URL": "https://cards-feed-demo.preview.emergentagent.com",
-      "eas": {
-        "projectId": "your-project-id"
-      }
+      "EXPO_PUBLIC_BACKEND_URL": "https://cards-feed-demo.preview.emergentagent.com"
     }
   }
 }
