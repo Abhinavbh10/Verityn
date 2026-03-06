@@ -238,6 +238,7 @@ REGIONAL_RSS_FEEDS = {
     "india": [
         {"url": "https://timesofindia.indiatimes.com/rssfeedstopstories.cms", "source": "Times of India"},
         {"url": "https://www.thehindu.com/news/national/feeder/default.rss", "source": "The Hindu"},
+        {"url": "https://www.hindustantimes.com/feeds/rss/india-news/rssfeed.xml", "source": "Hindustan Times"},
     ],
 }
 
