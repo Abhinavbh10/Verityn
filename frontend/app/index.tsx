@@ -152,8 +152,10 @@ export default function WelcomeScreen() {
                   key={category.id}
                   style={[
                     styles.categoryCard,
-                    { borderColor: isSelected ? category.color : '#E7E5E4' },
-                    isSelected && { borderWidth: 3 }
+                    { 
+                      borderColor: isSelected ? category.color : '#E7E5E4',
+                      borderWidth: isSelected ? 2.5 : 2,
+                    }
                   ]}
                   onPress={() => toggleCategory(category.id)}
                   activeOpacity={0.7}
@@ -238,7 +240,7 @@ const styles = StyleSheet.create({
   categoriesGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   categoryCard: {
     width: '48%', backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16,
-    marginBottom: 12, borderWidth: 2.5, borderColor: '#E7E5E4', position: 'relative',
+    marginBottom: 12, borderWidth: 2, borderColor: '#E7E5E4', position: 'relative',
     alignItems: 'center',
     shadowColor: '#44403C', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
   },
