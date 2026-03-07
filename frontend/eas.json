@@ -15,7 +15,7 @@
         "gradleCommand": ":app:assembleDebug"
       },
       "env": {
-        "EXPO_PUBLIC_BACKEND_URL": "https://cards-feed-demo.preview.emergentagent.com"
+        "EXPO_PUBLIC_BACKEND_URL": "https://news-feed-eu.preview.emergentagent.com"
       }
     },
     "development-device": {
@@ -28,7 +28,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_BACKEND_URL": "https://cards-feed-demo.preview.emergentagent.com"
+        "EXPO_PUBLIC_BACKEND_URL": "https://news-feed-eu.preview.emergentagent.com"
       }
     },
     "preview": {
@@ -41,7 +41,7 @@
         "simulator": false
       },
       "env": {
-        "EXPO_PUBLIC_BACKEND_URL": "https://cards-feed-demo.preview.emergentagent.com"
+        "EXPO_PUBLIC_BACKEND_URL": "https://news-feed-eu.preview.emergentagent.com"
       }
     },
     "production": {
@@ -52,7 +52,7 @@
         "autoIncrement": true
       },
       "env": {
-        "EXPO_PUBLIC_BACKEND_URL": "https://cards-feed-demo.preview.emergentagent.com"
+        "EXPO_PUBLIC_BACKEND_URL": "https://news-feed-eu.preview.emergentagent.com"
       }
     }
   },

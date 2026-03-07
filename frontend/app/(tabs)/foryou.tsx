@@ -42,7 +42,7 @@ const CATEGORIES = [
   { id: 'science', color: '#0891B2' },
 ];
 
-const API_BASE_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL || 'https://cards-feed-demo.preview.emergentagent.com';
+const API_BASE_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL || 'https://news-feed-eu.preview.emergentagent.com';
 
 export default function ForYouScreen() {
   const { colors, isDark } = useTheme();

@@ -200,7 +200,7 @@ npx expo start --dev-client
 
 The app is configured to use this backend:
 ```
-https://cards-feed-demo.preview.emergentagent.com
+https://news-feed-eu.preview.emergentagent.com
 ```
 
 This will work as long as the Emergent preview is running.

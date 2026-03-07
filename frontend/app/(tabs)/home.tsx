@@ -18,6 +18,14 @@ import { useShakeDetector } from '../../src/hooks/useShakeDetector';
 import { VeritynLoader } from '../../src/components/VeritynLoader';
 import { TabRefreshEvents } from '../../src/utils/tabRefresh';
 
+// Placeholder for analytics - Firebase was removed due to build issues
+const logEvent = (eventName: string, params?: Record<string, any>) => {
+  // Analytics disabled - can be re-enabled with a different provider
+  if (__DEV__) {
+    console.log('[Analytics]', eventName, params);
+  }
+};
+
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const CARD_HEIGHT = SCREEN_HEIGHT - 180;
 
@@ -39,7 +47,7 @@ const CATEGORIES: Category[] = [
   { id: 'science', name: 'Science', icon: 'flask', color: '#0891B2' },
 ];
 
-const API_BASE_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL || 'https://cards-feed-demo.preview.emergentagent.com';
+const API_BASE_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL || 'https://news-feed-eu.preview.emergentagent.com';
 
 // Estimate read time based on description length
 const getReadTime = (description: string) => {
