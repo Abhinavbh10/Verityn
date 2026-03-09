@@ -1,0 +1,175 @@
+{
+  "app_name": "Verityn",
+  "design_philosophy": {
+    "core_concept": "The Elegant Swipe",
+    "inspiration": "Flipboard (Editorial Polish) + Inshorts (Vertical Efficiency)",
+    "mood": "Sophisticated, Trustworthy, Essential, Fluid",
+    "target_audience": "European news readers who value quality over noise."
+  },
+  "typography": {
+    "font_family": {
+      "serif": "Playfair Display, Merriweather, Georgia, serif",
+      "sans": "Inter, Roboto, San Francisco, sans-serif"
+    },
+    "scale": {
+      "display": {
+        "size": 32,
+        "line_height": 40,
+        "weight": "700",
+        "font_family": "serif",
+        "tracking": "-0.5px"
+      },
+      "h1": {
+        "size": 24,
+        "line_height": 32,
+        "weight": "700",
+        "font_family": "serif"
+      },
+      "h2": {
+        "size": 20,
+        "line_height": 28,
+        "weight": "600",
+        "font_family": "sans"
+      },
+      "body": {
+        "size": 16,
+        "line_height": 24,
+        "weight": "400",
+        "font_family": "sans"
+      },
+      "caption": {
+        "size": 12,
+        "line_height": 16,
+        "weight": "500",
+        "font_family": "sans",
+        "uppercase": true,
+        "tracking": "1px"
+      }
+    }
+  },
+  "colors": {
+    "light": {
+      "background": "#FDFBF7",
+      "surface": "#FFFFFF",
+      "text_primary": "#1A1A1A",
+      "text_secondary": "#595959",
+      "accent": "#D93025",
+      "border": "#E5E0D8",
+      "success": "#2E7D32",
+      "error": "#C62828"
+    },
+    "dark": {
+      "background": "#121212",
+      "surface": "#1E1E1E",
+      "text_primary": "#E0E0E0",
+      "text_secondary": "#A0A0A0",
+      "accent": "#FF5252",
+      "border": "#333333",
+      "success": "#81C784",
+      "error": "#E57373"
+    },
+    "gradients": {
+      "overlay": ["transparent", "rgba(0,0,0,0.8)"]
+    }
+  },
+  "layout": {
+    "spacing": {
+      "xs": 4,
+      "s": 8,
+      "m": 16,
+      "l": 24,
+      "xl": 32,
+      "xxl": 48
+    },
+    "radius": {
+      "s": 4,
+      "m": 8,
+      "l": 16,
+      "xl": 24,
+      "full": 9999
+    }
+  },
+  "components": {
+    "NewsCard": {
+      "description": "Full-screen vertical card. Immersive image background or split layout.",
+      "styles": {
+        "container": "flex-1 w-full h-full bg-background relative overflow-hidden",
+        "image_full": "absolute inset-0 w-full h-full object-cover",
+        "overlay": "absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/90 to-transparent p-6 flex justify-end",
+        "title": "text-white font-serif text-3xl font-bold mb-3 shadow-sm",
+        "summary": "text-white/90 font-sans text-base leading-relaxed line-clamp-3 mb-4",
+        "meta": "flex-row items-center gap-2 text-white/70 text-xs font-medium uppercase tracking-wider"
+      }
+    },
+    "CategoryTab": {
+      "description": "Horizontal scrollable list of pills.",
+      "styles": {
+        "container": "flex-row px-4 py-3 gap-3 bg-background/95 backdrop-blur border-b border-border",
+        "pill": "px-4 py-2 rounded-full border border-border bg-surface",
+        "pill_active": "bg-text_primary border-text_primary",
+        "text": "text-sm font-medium text-text_secondary",
+        "text_active": "text-background"
+      }
+    },
+    "TabBar": {
+      "description": "Minimalist bottom navigation with icons.",
+      "styles": {
+        "container": "flex-row justify-around items-center h-16 bg-surface border-t border-border pb-safe",
+        "item": "items-center justify-center p-2",
+        "icon_size": 24,
+        "active_color": "text_primary",
+        "inactive_color": "text_secondary"
+      }
+    }
+  },
+  "motion": {
+    "swipe_animation": {
+      "type": "spring",
+      "stiffness": 300,
+      "damping": 30
+    },
+    "page_transition": {
+      "type": "fade",
+      "duration": 200
+    }
+  },
+  "image_urls": {
+    "placeholders": [
+      {
+        "category": "Technology & City",
+        "url": "https://images.unsplash.com/photo-1684243551865-f8c82f178588?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njd8MHwxfHNlYXJjaHw0fHxjaXR5JTIwc2t5bGluZSUyMHRlY2hub2xvZ3klMjBvZmZpY2UlMjBjb2ZmZWUlMjBzcG9ydHMlMjBwb3J0cmFpdHxlbnwwfHx8fDE3NzMwNTc5ODd8MA&ixlib=rb-4.1.0&q=85",
+        "description": "City skyline, suitable for business or tech news."
+      },
+      {
+        "category": "Lifestyle & Culture",
+        "url": "https://images.unsplash.com/photo-1643992260543-643209183e68?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njd8MHwxfHNlYXJjaHwxfHxjaXR5JTIwc2t5bGluZSUyMHRlY2hub2xvZ3klMjBvZmZpY2UlMjBjb2ZmZWUlMjBzcG9ydHMlMjBwb3J0cmFpdHxlbnwwfHx8fDE3NzMwNTc5ODd8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Coffee cup on ledge, suitable for lifestyle or morning briefs."
+      },
+      {
+        "category": "People & Society",
+        "url": "https://images.unsplash.com/photo-1746088105152-5c3d9eb2e290?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njd8MHwxfHNlYXJjaHwzfHxjaXR5JTIwc2t5bGluZSUyMHRlY2hub2xvZ3klMjBvZmZpY2UlMjBjb2ZmZWUlMjBzcG9ydHMlMjBwb3J0cmFpdHxlbnwwfHx8fDE3NzMwNTc5ODd8MA&ixlib=rb-4.1.0&q=85",
+        "description": "People near window, suitable for social or political news."
+      }
+    ]
+  },
+  "instructions_to_main_agent": [
+    "CRITICAL: The user has requested to follow '.js' file guidelines, but the codebase is in TypeScript (.tsx). Use TypeScript interfaces where possible but prioritize the logic and structure defined here.",
+    "Implement the vertical swipe using a PagerView (react-native-pager-view) or a vertical FlatList with 'pagingEnabled' for the best performance.",
+    "Ensure the 'Home' screen is immersive. Hide the standard header when reading a card if possible, or make it transparent.",
+    "Typography: Use a Serif font for Headlines to achieve the Flipboard look. If external fonts (Playfair Display) aren't loaded, fallback to the system Serif.",
+    "Color Palette: Strictly adhere to the 'light' and 'dark' themes defined. Use the 'Auto' detection to switch.",
+    "For the 'NewsCard', ensure the image takes up at least 50% of the screen or is a full background with a gradient overlay for text readability.",
+    "Add a 'Bookmark' and 'Share' icon on every card, easily accessible with a thumb tap (bottom right or bottom bar).",
+    "Micro-interactions: Add a subtle scale-down effect on the card when swiping begins.",
+    "For accessibility, ensure all text over images has sufficient contrast (use the defined gradient overlay).",
+    "Use 'lucide-react-native' for icons if available, or Expo's default vector icons.",
+    "All interactive elements MUST include 'data-testid' for testing."
+  ],
+  "universal_guidelines": [
+    "Do not use gradients for backgrounds unless specified (use solid paper/dark colors).",
+    "Avoid centering text in news articles; left-align for readability.",
+    "Use 2-3x more padding than standard lists.",
+    "Use 'sonner' for toasts if available, otherwise standard Alerts.",
+    "Follow the 'Bento' grid only for the 'Explore' or 'Search' tab, not the main feed."
+  ]
+}
