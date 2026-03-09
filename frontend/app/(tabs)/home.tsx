@@ -82,8 +82,8 @@ const CATEGORIES: Category[] = [
 const getCategoryColor = (categoryId: string) =>
   CATEGORIES.find(c => c.id === categoryId.toLowerCase())?.color || '#595959';
 
-// Truncate description to 60 words max (Inshorts style)
-const truncateToWords = (text: string, maxWords: number = 60): string => {
+// Truncate description to ~60 words max (Inshorts style - short & punchy)
+const truncateToWords = (text: string, maxWords: number = 25): string => {
   if (!text) return '';
   const words = text.split(/\s+/);
   if (words.length <= maxWords) return text;
@@ -472,8 +472,8 @@ export default function HomeScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
-      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} translucent backgroundColor="transparent" />
 
       {/* Feature Overlay */}
       <FeatureOverlay visible={showFeatureOverlay} onDismiss={() => setShowFeatureOverlay(false)} />
