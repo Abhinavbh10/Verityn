@@ -481,32 +481,7 @@ export default function HomeScreen() {
       {/* Network Banner */}
       <NetworkStatusBanner onRetry={newsActions.retry} />
 
-      {/* Enhanced Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <Text style={[styles.logo, { color: colors.text }]}>Verityn</Text>
-          <View style={styles.headerMeta}>
-            <Text style={[styles.headerDate, { color: colors.textMuted }]}>
-              {getFormattedDate().day}, {getFormattedDate().date}
-            </Text>
-          </View>
-        </View>
-        <View style={styles.headerRight}>
-          {isOfflineData && (
-            <View style={[styles.offlineBadge, { backgroundColor: colors.categoryPill }]}>
-              <Ionicons name="cloud-offline" size={12} color={colors.textMuted} />
-            </View>
-          )}
-          <TouchableOpacity 
-            style={[styles.headerIconBtn, { backgroundColor: colors.categoryPill }]}
-            onPress={() => {/* Navigate to search */}}
-          >
-            <Ionicons name="search" size={18} color={colors.text} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Category Pills */}
+      {/* Category Pills - Now at top, no header */}
       <View style={[styles.categoryContainer, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
         <FlatList
           horizontal
@@ -535,6 +510,12 @@ export default function HomeScreen() {
             );
           }}
         />
+        {/* Offline indicator in category bar */}
+        {isOfflineData && (
+          <View style={[styles.offlineBadgeInline, { backgroundColor: colors.categoryPill }]}>
+            <Ionicons name="cloud-offline" size={14} color={colors.textMuted} />
+          </View>
+        )}
       </View>
 
       {/* Error Banner */}
@@ -669,9 +650,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   offlineBadgeText: { fontSize: 11, fontWeight: '600' },
+  offlineBadgeInline: {
+    marginRight: 16,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 
   // Category Pills
   categoryContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderBottomWidth: 1,
   },
   categoryList: {
@@ -716,9 +707,9 @@ const styles = StyleSheet.create({
   card: { width: SCREEN_WIDTH },
   cardTouchable: { flex: 1 },
 
-  // Image Section
+  // Image Section - 60% of screen for more immersive experience
   imageSection: {
-    height: '55%',
+    height: '60%',
     position: 'relative',
   },
   heroImage: {
