@@ -19,6 +19,7 @@ import {
   EUROPEAN_COUNTRIES,
 } from '../../src/utils/locations';
 import { VeritynLoader } from '../../src/components/VeritynLoader';
+import { TabRefreshEvents } from '../../src/utils/tabRefresh';
 
 interface UserLocationPreference {
   countries: string[];
