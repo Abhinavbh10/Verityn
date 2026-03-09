@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { formatDistanceToNow, parseISO, isValid } from 'date-fns';
+import { formatDistanceToNow, parseISO, isValid, format } from 'date-fns';
 import * as WebBrowser from 'expo-web-browser';
 import { useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -81,6 +81,23 @@ const CATEGORIES: Category[] = [
 
 const getCategoryColor = (categoryId: string) =>
   CATEGORIES.find(c => c.id === categoryId.toLowerCase())?.color || '#595959';
+
+// Truncate description to 60 words max (Inshorts style)
+const truncateToWords = (text: string, maxWords: number = 60): string => {
+  if (!text) return '';
+  const words = text.split(/\s+/);
+  if (words.length <= maxWords) return text;
+  return words.slice(0, maxWords).join(' ') + '...';
+};
+
+// Get formatted date for header
+const getFormattedDate = (): { day: string; date: string } => {
+  const now = new Date();
+  return {
+    day: format(now, 'EEEE'),      // "Sunday"
+    date: format(now, 'MMM d'),    // "Mar 9"
+  };
+};
 
 // Immersive News Card Component
 interface NewsCardProps {
@@ -226,7 +243,7 @@ const NewsCard = React.memo(({
               {article.title}
             </Text>
             <Text style={[styles.description, { color: colors.textSecondary }]} numberOfLines={4}>
-              {article.description}
+              {truncateToWords(article.description, 60)}
             </Text>
             <View style={styles.metaRow}>
               <Text style={[styles.metaText, { color: colors.textMuted }]}>{timeAgo()} ago</Text>
@@ -241,7 +258,7 @@ const NewsCard = React.memo(({
         {hasImage && (
           <View style={[styles.bottomSection, { backgroundColor: colors.surface }]}>
             <Text style={[styles.descriptionCompact, { color: colors.textSecondary }]} numberOfLines={2}>
-              {article.description}
+              {truncateToWords(article.description, 60)}
             </Text>
             <TouchableOpacity onPress={() => onOpenArticle(article.link)}>
               <Text style={[styles.readMoreText, { color: colors.accent }]}>Read full story →</Text>
@@ -438,8 +455,12 @@ export default function HomeScreen() {
     />
   ), [colors, isDark, bookmarkedIds, CARD_HEIGHT]);
 
-  // Loading state
-  if (loadingState === 'loading' && articles.length === 0) {
+  // Show loading skeleton during initial load OR before preferences are loaded
+  const isInitialLoading = !preferencesLoaded || 
+                           (loadingState === 'loading' && articles.length === 0) ||
+                           (preferencesLoaded && selectedCategories.length > 0 && articles.length === 0 && loadingState !== 'idle');
+
+  if (isInitialLoading && !error) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
         <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
@@ -460,15 +481,29 @@ export default function HomeScreen() {
       {/* Network Banner */}
       <NetworkStatusBanner onRetry={newsActions.retry} />
 
-      {/* Minimal Header */}
+      {/* Enhanced Header */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <Text style={[styles.logo, { color: colors.text }]}>Verityn</Text>
-        {isOfflineData && (
-          <View style={[styles.offlineBadge, { backgroundColor: colors.categoryPill }]}>
-            <Ionicons name="cloud-offline" size={12} color={colors.textMuted} />
-            <Text style={[styles.offlineBadgeText, { color: colors.textMuted }]}>Offline</Text>
+        <View style={styles.headerLeft}>
+          <Text style={[styles.logo, { color: colors.text }]}>Verityn</Text>
+          <View style={styles.headerMeta}>
+            <Text style={[styles.headerDate, { color: colors.textMuted }]}>
+              {getFormattedDate().day}, {getFormattedDate().date}
+            </Text>
           </View>
-        )}
+        </View>
+        <View style={styles.headerRight}>
+          {isOfflineData && (
+            <View style={[styles.offlineBadge, { backgroundColor: colors.categoryPill }]}>
+              <Ionicons name="cloud-offline" size={12} color={colors.textMuted} />
+            </View>
+          )}
+          <TouchableOpacity 
+            style={[styles.headerIconBtn, { backgroundColor: colors.categoryPill }]}
+            onPress={() => {/* Navigate to search */}}
+          >
+            <Ionicons name="search" size={18} color={colors.text} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Category Pills */}
@@ -594,6 +629,30 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
   },
+  headerLeft: {
+    flex: 1,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  headerMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  headerDate: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  headerIconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   logo: {
     fontSize: 26,
     fontWeight: '700',
@@ -604,9 +663,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
   },
   offlineBadgeText: { fontSize: 11, fontWeight: '600' },
 
