@@ -33,6 +33,8 @@ import { useTheme } from '../../src/utils/theme';
 import { useShakeDetector } from '../../src/hooks/useShakeDetector';
 import { VeritynLoader } from '../../src/components/VeritynLoader';
 import { TabRefreshEvents } from '../../src/utils/tabRefresh';
+import { secureStorage } from '../../src/utils/secureStorage';
+import FeatureOverlay from '../../src/components/FeatureOverlay';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const CARD_HEIGHT = SCREEN_HEIGHT - 180;
@@ -210,6 +212,7 @@ export default function HomeScreen() {
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
   const [currentIndex, setCurrentIndex] = useState(0);
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
+  const [showFeatureOverlay, setShowFeatureOverlay] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
   // Use the enterprise-grade news hook
@@ -250,6 +253,15 @@ export default function HomeScreen() {
         if (preferences?.categories?.length) {
           setSelectedCategories(preferences.categories);
         }
+        
+        // Check if we should show feature overlay (first time user)
+        const shouldShowOverlay = await secureStorage.getItem('verityn_show_feature_overlay');
+        if (shouldShowOverlay === 'true') {
+          setShowFeatureOverlay(true);
+          // Clear the flag
+          await secureStorage.deleteItem('verityn_show_feature_overlay');
+        }
+        
         setPreferencesLoaded(true);
       } catch (error) {
         console.error('Error loading preferences:', error);
@@ -375,6 +387,12 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+      {/* Feature Overlay for first-time users */}
+      <FeatureOverlay 
+        visible={showFeatureOverlay} 
+        onDismiss={() => setShowFeatureOverlay(false)} 
+      />
+      
       {/* Network Status Banner */}
       <NetworkStatusBanner onRetry={newsActions.retry} />
 

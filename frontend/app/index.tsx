@@ -9,6 +9,10 @@ import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { getPreferences, savePreferences as savePrefs } from '../src/utils/storage';
 import { hasGDPRConsent, saveGDPRConsent } from '../src/utils/gdpr';
+import { secureStorage } from '../src/utils/secureStorage';
+import OnboardingIntro from '../src/components/OnboardingIntro';
+
+const ONBOARDING_COMPLETE_KEY = 'verityn_onboarding_intro_seen';
 
 interface Category {
   id: string;
@@ -88,41 +92,16 @@ const TermsModal = ({ visible, onClose, isDark }: { visible: boolean; onClose: (
   </Modal>
 );
 
-export default function WelcomeScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-  
+// Category Selection Screen
+function CategorySelection({ isDark, colors, onComplete }: { 
+  isDark: boolean; 
+  colors: any;
+  onComplete: () => void;
+}) {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [checking, setChecking] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [gdprAccepted, setGdprAccepted] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
-
-  useEffect(() => {
-    checkExistingPreferences();
-  }, []);
-
-  const checkExistingPreferences = async () => {
-    try {
-      // Check if user has GDPR consent AND preferences
-      const hasConsent = await hasGDPRConsent();
-      const preferences = await getPreferences();
-      
-      if (hasConsent && preferences?.categories?.length > 0) {
-        router.replace('/(tabs)/home');
-        return;
-      }
-      
-      // Pre-check GDPR if already consented
-      if (hasConsent) {
-        setGdprAccepted(true);
-      }
-    } catch (error) {
-      console.error('Error checking preferences:', error);
-    }
-    setChecking(false);
-    setLoading(false);
-  };
 
   const toggleCategory = (categoryId: string) => {
     setSelectedCategories(prev => {
@@ -138,11 +117,11 @@ export default function WelcomeScreen() {
     
     setLoading(true);
     try {
-      // Save GDPR consent
       await saveGDPRConsent();
-      // Save preferences
       await savePrefs(selectedCategories);
-      router.replace('/(tabs)/home');
+      // Mark that we should show feature overlay on home
+      await secureStorage.setItem('verityn_show_feature_overlay', 'true');
+      onComplete();
     } catch (error) {
       console.error('Error saving:', error);
       setLoading(false);
@@ -150,26 +129,6 @@ export default function WelcomeScreen() {
   };
 
   const canProceed = selectedCategories.length > 0 && gdprAccepted;
-
-  // Theme colors
-  const colors = {
-    background: isDark ? '#18181B' : '#FDF8F3',
-    card: isDark ? '#27272A' : '#FFFFFF',
-    text: isDark ? '#FAFAFA' : '#292524',
-    textMuted: isDark ? '#A1A1AA' : '#78716C',
-    border: isDark ? '#3F3F46' : '#E7E5E4',
-    primary: '#B45309',
-  };
-
-  if (checking) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -195,21 +154,12 @@ export default function WelcomeScreen() {
               <Circle cx="50" cy="20" r="4" fill="#B45309" />
             </Svg>
           </View>
-          <Text style={[styles.title, { color: colors.text }]}>Verityn</Text>
-          <Text style={[styles.subtitle, { color: colors.textMuted }]}>Truth in Every Story</Text>
-        </View>
-
-        {/* Welcome Text */}
-        <View style={styles.welcomeSection}>
-          <Text style={[styles.welcomeTitle, { color: colors.text }]}>Welcome!</Text>
-          <Text style={[styles.welcomeText, { color: colors.textMuted }]}>
-            Select your favorite news categories to personalize your feed.
-          </Text>
+          <Text style={[styles.title, { color: colors.text }]}>Almost there!</Text>
+          <Text style={[styles.subtitle, { color: colors.textMuted }]}>Pick your interests</Text>
         </View>
 
         {/* Categories Grid */}
         <View style={styles.categoriesSection}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Choose Your Interests</Text>
           <View style={styles.categoriesGrid}>
             {CATEGORIES.map((category) => {
               const isSelected = selectedCategories.includes(category.id);
@@ -303,7 +253,7 @@ export default function WelcomeScreen() {
             <ActivityIndicator color="#fff" />
           ) : (
             <>
-              <Text style={styles.continueButtonText}>Get Started</Text>
+              <Text style={styles.continueButtonText}>Start Reading</Text>
               <Ionicons name="arrow-forward" size={20} color="#fff" />
             </>
           )}
@@ -321,6 +271,101 @@ export default function WelcomeScreen() {
   );
 }
 
+// Main Welcome/Onboarding Screen
+export default function WelcomeScreen() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  
+  const [checking, setChecking] = useState(true);
+  const [showIntro, setShowIntro] = useState(false);
+  const [showCategorySelection, setShowCategorySelection] = useState(false);
+
+  const colors = {
+    background: isDark ? '#18181B' : '#FDF8F3',
+    card: isDark ? '#27272A' : '#FFFFFF',
+    text: isDark ? '#FAFAFA' : '#292524',
+    textMuted: isDark ? '#A1A1AA' : '#78716C',
+    border: isDark ? '#3F3F46' : '#E7E5E4',
+    primary: '#B45309',
+  };
+
+  useEffect(() => {
+    checkExistingState();
+  }, []);
+
+  const checkExistingState = async () => {
+    try {
+      // Check if user has GDPR consent AND preferences (returning user)
+      const hasConsent = await hasGDPRConsent();
+      const preferences = await getPreferences();
+      
+      console.log('[Onboarding] hasConsent:', hasConsent, 'preferences:', preferences?.categories?.length);
+      
+      if (hasConsent && preferences?.categories?.length > 0) {
+        // Returning user - go to home
+        router.replace('/(tabs)/home');
+        return;
+      }
+      
+      // Check if intro was already seen
+      const introSeen = await secureStorage.getItem(ONBOARDING_COMPLETE_KEY);
+      console.log('[Onboarding] introSeen:', introSeen);
+      
+      if (introSeen === 'true') {
+        // Intro seen but no preferences - show category selection
+        setShowCategorySelection(true);
+      } else {
+        // First time user - show intro slides
+        setShowIntro(true);
+      }
+    } catch (error) {
+      console.error('Error checking state:', error);
+      setShowIntro(true);
+    }
+    setChecking(false);
+  };
+
+  const handleIntroComplete = async () => {
+    // Mark intro as seen
+    await secureStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
+    setShowIntro(false);
+    setShowCategorySelection(true);
+  };
+
+  const handleCategorySelectionComplete = () => {
+    router.replace('/(tabs)/home');
+  };
+
+  // Loading state
+  if (checking) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Show intro slides
+  if (showIntro) {
+    return <OnboardingIntro onComplete={handleIntroComplete} />;
+  }
+
+  // Show category selection
+  if (showCategorySelection) {
+    return (
+      <CategorySelection 
+        isDark={isDark} 
+        colors={colors} 
+        onComplete={handleCategorySelectionComplete}
+      />
+    );
+  }
+
+  return null;
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
@@ -334,17 +379,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center', marginBottom: 16,
   },
   logoContainerDark: { backgroundColor: '#422006' },
-  title: { fontSize: 32, fontWeight: '700', marginBottom: 8, letterSpacing: -0.5 },
+  title: { fontSize: 28, fontWeight: '700', marginBottom: 8, letterSpacing: -0.5, fontFamily: 'serif' },
   subtitle: { fontSize: 16, letterSpacing: 0.3 },
-  
-  // Welcome
-  welcomeSection: { marginBottom: 32 },
-  welcomeTitle: { fontSize: 24, fontWeight: '600', marginBottom: 8 },
-  welcomeText: { fontSize: 15, lineHeight: 24 },
   
   // Categories
   categoriesSection: { marginBottom: 16 },
-  sectionTitle: { fontSize: 18, fontWeight: '600', marginBottom: 16 },
   categoriesGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   categoryCard: {
     width: '48%', borderRadius: 16, padding: 16,
