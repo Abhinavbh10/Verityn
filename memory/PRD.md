@@ -21,7 +21,14 @@ European news readers who want quick, elegant news consumption on mobile.
 
 ---
 
-## Implemented Features (as of March 2026)
+## Implemented Features (as of March 9, 2026)
+
+### ✅ Bug Fixes (Latest Session)
+- **CRITICAL FIX**: "No Stories Found" bug on home screen after category selection
+  - Root cause: Race conditions in useNews hook category change detection
+  - Fixed: useNews hook now properly detects category changes
+  - Fixed: home.tsx initial fetch logic with proper preferencesLoaded check
+  - Verified: Testing agent confirmed 100% pass rate
 
 ### Onboarding Flow
 - [x] 3 intro slides (Swipe Through News, Your Feed Your Way, Read Anywhere)
@@ -34,8 +41,8 @@ European news readers who want quick, elegant news consumption on mobile.
 - [x] Serif headlines (Georgia font)
 - [x] Source badge (top-left)
 - [x] Bookmark & Share buttons (top-right)
-- [x] Category pills (horizontal scroll)
-- [x] Auto light/dark mode (system-based)
+- [x] Category pills (horizontal scroll) - For You, Politics, Business, Technology
+- [x] Dark theme (Inshorts-style) for news cards
 - [x] Gradient overlay for text readability
 
 ### Network & Reliability
