@@ -249,9 +249,9 @@ export default function HomeScreen() {
   const TAB_BAR_HEIGHT = 70;
   const CARD_HEIGHT = SCREEN_HEIGHT - HEADER_HEIGHT - TAB_BAR_HEIGHT - insets.top;
 
-  // Enterprise-grade news hook
+  // Enterprise-grade news hook - enable initialLoad when categories are available
   const [newsState, newsActions] = useNews(selectedCategories, {
-    initialLoad: false,
+    initialLoad: selectedCategories.length > 0,
     autoRefreshOnReconnect: true,
     cacheForOffline: true,
     pageSize: 15,
@@ -269,11 +269,13 @@ export default function HomeScreen() {
 
   useShakeDetector({ onShake: handleShake });
 
-  // Load preferences
+  // Load preferences on mount
   useEffect(() => {
     const loadPreferences = async () => {
       try {
         const preferences = await getPreferences();
+        console.log('[Home] Loaded preferences:', preferences?.categories);
+        
         if (preferences?.categories?.length) {
           setSelectedCategories(preferences.categories);
         }
@@ -293,12 +295,29 @@ export default function HomeScreen() {
     loadPreferences();
   }, []);
 
-  // Initial fetch
+  // Trigger fetch when categories are loaded and changed
   useEffect(() => {
     if (preferencesLoaded && selectedCategories.length > 0) {
+      console.log('[Home] Categories loaded, fetching news:', selectedCategories);
       newsActions.refresh();
     }
-  }, [preferencesLoaded, selectedCategories]);
+  }, [preferencesLoaded]); // Only depend on preferencesLoaded, not selectedCategories to avoid loop
+  
+  // Handle category changes after initial load
+  const prevCategoriesRef = useRef<string[]>([]);
+  useEffect(() => {
+    if (preferencesLoaded && selectedCategories.length > 0) {
+      const categoriesChanged = 
+        selectedCategories.length !== prevCategoriesRef.current.length ||
+        !selectedCategories.every(c => prevCategoriesRef.current.includes(c));
+      
+      if (categoriesChanged && prevCategoriesRef.current.length > 0) {
+        console.log('[Home] Categories changed, refreshing:', selectedCategories);
+        newsActions.refresh();
+      }
+      prevCategoriesRef.current = selectedCategories;
+    }
+  }, [selectedCategories, preferencesLoaded]);
 
   // Tab refresh
   useEffect(() => {

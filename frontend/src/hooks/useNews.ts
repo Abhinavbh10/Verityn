@@ -267,13 +267,23 @@ export function useNews(
       categories.length !== previousCategories.current.length ||
       !categories.every(cat => previousCategories.current.includes(cat));
 
-    if (categoriesChanged || (isInitialLoad.current && opts.initialLoad)) {
-      previousCategories.current = categories;
+    // Always update previousCategories when they change
+    if (categoriesChanged) {
+      console.log('[useNews] Categories changed:', previousCategories.current, '->', categories);
+      previousCategories.current = [...categories];
+    }
+
+    // Fetch when:
+    // 1. Initial load is enabled AND this is the first load AND we have categories
+    // 2. Categories have changed AND we have categories
+    const shouldFetch = 
+      (isInitialLoad.current && opts.initialLoad && categories.length > 0) ||
+      (categoriesChanged && categories.length > 0 && !isInitialLoad.current);
+
+    if (shouldFetch) {
+      console.log('[useNews] Triggering fetch, isInitial:', isInitialLoad.current);
       isInitialLoad.current = false;
-      
-      if (categories.length > 0) {
-        fetchNews(0, false);
-      }
+      fetchNews(0, false);
     }
   }, [categories, opts.initialLoad, fetchNews]);
 
