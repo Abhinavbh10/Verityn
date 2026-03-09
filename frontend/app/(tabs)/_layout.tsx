@@ -3,20 +3,20 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '../../src/utils/theme';
 import { TabRefreshEvents } from '../../src/utils/tabRefresh';
 
+// Inshorts-style: Force dark theme colors
+const DARK_COLORS = {
+  background: '#000000',
+  card: '#0A0A0A',
+  text: '#FFFFFF',
+  textMuted: '#888888',
+  border: '#222222',
+  primary: '#FF6B35',
+};
+
 export default function TabLayout() {
-  // Force dark theme for Inshorts-style UI
-  const isDark = true;
-  const colors = {
-    background: '#000000',
-    card: '#0A0A0A',
-    text: '#FFFFFF',
-    textMuted: '#888888',
-    border: '#222222',
-    primary: '#FF6B35',
-  };
+  const colors = DARK_COLORS;
   const insets = useSafeAreaInsets();
   
   // More robust bottom padding calculation for Android devices with gesture navigation
@@ -40,8 +40,10 @@ export default function TabLayout() {
   
   return (
     <Tabs
+      sceneContainerStyle={{ backgroundColor: colors.background }}
       screenOptions={{
         headerShown: false,
+        sceneStyle: { backgroundColor: colors.background },
         tabBarStyle: {
           backgroundColor: colors.card,
           borderTopColor: colors.border,
@@ -56,7 +58,7 @@ export default function TabLayout() {
           elevation: 8,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: isDark ? 0.3 : 0.1,
+          shadowOpacity: 0.3,
           shadowRadius: 4,
         },
         tabBarActiveTintColor: colors.primary,
