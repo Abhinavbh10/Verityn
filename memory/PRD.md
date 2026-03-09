@@ -1,76 +1,118 @@
-# Verityn - European News App
+# Verityn - News Aggregator App
 
-## Original Problem Statement
-Mobile news application aggregating European news from RSS feeds, with personalization features and Inshorts-style card interface.
+## Product Overview
+A mobile news aggregator for the European market with Flipboard/Inshorts-style UI.
 
-## Core Requirements
+### Target Audience
+European news readers who want quick, elegant news consumption on mobile.
+
+### Core Requirements
 1. **Platform**: Expo-based Mobile App (iOS/Android)
-2. **UI/UX**: "Inshorts-style" vertical swipe cards, European Elegance theme
-3. **News Sources**: European RSS feeds with content scraping
-4. **Personalization**: Category selection, keyword-based "For You", location-based filtering
-5. **Features**: Bookmarks, search, dark mode, offline reading, shake-to-refresh
+2. **UI/UX**: Flipboard/Inshorts style - full-screen cards, serif headlines, vertical swipe
+3. **Personalization**: Category selection, "For You" feed
+4. **Legal**: GDPR compliant with checkbox consent
 
-## Architecture
-```
-/app
-├── backend/
-│   └── server.py              # FastAPI with RSS parsing, scraping, location news
-├── frontend/
-│   ├── app/
-│   │   ├── (tabs)/
-│   │   │   ├── home.tsx       # Main news feed (Inshorts-style)
-│   │   │   ├── foryou.tsx     # Location + Keyword personalization
-│   │   │   ├── search.tsx
-│   │   │   ├── bookmarks.tsx
-│   │   │   └── profile.tsx    # Settings
-│   │   └── index.tsx          # Onboarding
-│   └── src/
-│       └── utils/
-│           ├── theme.tsx      # European Elegance theme
-│           ├── locations.ts   # Country/city data
-│           └── ...
-```
-
-## API Endpoints
-- `GET /api/news?categories=...` - Main news feed
-- `GET /api/location-news?countries=uk,germany&cities=london` - Location-based news
-- `GET /api/locations/available` - Available countries/cities
-- `GET /api/search?q=...` - Search articles
-
-## What's Implemented (March 2026)
-
-### ✅ Completed
-- [x] Full European Elegance theme (warm white, amber primary)
-- [x] Location-based news feature with 18 European countries
-- [x] Regional RSS feeds (BBC, Guardian, DW, France24, etc.)
-- [x] City-level filtering with 30+ cities
-- [x] "For You" tab with Region/Keywords toggle
-- [x] Dark mode support
-- [x] Inshorts-style vertical swipe cards
-- [x] Category selection onboarding
-- [x] Bookmarking system
-- [x] Content scraping for full articles
-- [x] Web-compatible storage (localStorage fallback)
-
-### 🔲 In Progress
-- [ ] App Store asset generation (screenshots, icons)
-- [ ] Offline reading (save button needed on cards)
-- [ ] Shake-to-refresh (hook exists, needs wiring)
-
-### 📋 Backlog
-- [ ] Real push notifications (requires backend service)
-- [ ] AI article summaries
-- [ ] View-mode toggle in Settings
+---
 
 ## Tech Stack
-- **Frontend**: React Native, Expo SDK 54, TypeScript, Expo Router
-- **Backend**: Python, FastAPI
-- **Libraries**: feedparser, beautifulsoup4, httpx, @shopify/flash-list
+- **Frontend**: Expo (SDK 54), React Native, TypeScript
+- **Backend**: FastAPI, Python
+- **Storage**: On-device via expo-secure-store (no external DB)
+
+---
+
+## Implemented Features (as of March 2026)
+
+### Onboarding Flow
+- [x] 3 intro slides (Swipe Through News, Your Feed Your Way, Read Anywhere)
+- [x] Category selection screen (7 categories)
+- [x] GDPR checkbox with Terms & Privacy Policy popup
+- [x] Feature overlay on first home visit
+
+### News Feed (Flipboard/Inshorts Style)
+- [x] Full-bleed hero images (55% of card)
+- [x] Serif headlines (Georgia font)
+- [x] Source badge (top-left)
+- [x] Bookmark & Share buttons (top-right)
+- [x] Category pills (horizontal scroll)
+- [x] Auto light/dark mode (system-based)
+- [x] Gradient overlay for text readability
+
+### Network & Reliability
+- [x] NetworkManager for connection monitoring
+- [x] NewsService with 3 retries + exponential backoff
+- [x] OfflineNewsCache (100 articles, 24h expiry)
+- [x] Auto-refresh on reconnection
+- [x] Shake to refresh
+
+### Other Features
+- [x] Bookmarks (local storage)
+- [x] Search
+- [x] Settings/Profile
+- [x] Tab refresh on icon tap
+
+---
+
+## Pending Tasks
+
+### P0 (Critical)
+- [ ] Test APK build with new UI
+- [ ] Verify no white rectangle bug in standalone build
+
+### P1 (High Priority)
+- [ ] Social Share Card feature
+- [ ] App Store screenshots
+- [ ] Local timezone display
+
+### P2 (Medium Priority)
+- [ ] Push notifications (Firebase was removed due to build issues)
+- [ ] AI article summaries
+- [ ] Audio news (TTS)
+
+### P3 (Low Priority)
+- [ ] List/card view toggle
+- [ ] Social features (comments, reactions)
+
+---
+
+## Key Files
+- `/app/frontend/app/index.tsx` - Onboarding (intro + category selection)
+- `/app/frontend/app/(tabs)/home.tsx` - Main news feed (Flipboard style)
+- `/app/frontend/src/services/NetworkManager.ts` - Network monitoring
+- `/app/frontend/src/services/NewsService.ts` - API calls with retry
+- `/app/frontend/src/services/OfflineNewsCache.ts` - Offline support
+- `/app/frontend/src/components/OnboardingIntro.tsx` - Intro slides
+- `/app/frontend/src/components/FeatureOverlay.tsx` - First-time feature tips
+- `/app/backend/server.py` - FastAPI backend
+
+---
+
+## API Endpoints
+- `GET /api/news?categories=...&limit=15&offset=0` - Paginated news
+- `GET /api/search?q=...` - Search articles
+- `GET /api/health` - Health check
+
+---
+
+## Design Guidelines
+See `/app/design_guidelines.json` for full design system including:
+- Color palette (light/dark)
+- Typography (serif for headlines, sans for body)
+- Component specifications
+- Motion/animations
+
+---
 
 ## Known Issues
-- Image loading fails in web preview (ORB blocking) - works on native
-- Storage clears in preview - persists on real devices
+- Firebase was completely removed due to build failures
+- Some news sources (WashingtonPost) block image scraping - handled with fallback
 
-## Credentials
-- No authentication required
-- News from public RSS feeds
+---
+
+## Build Instructions
+```bash
+cd frontend
+rm -rf node_modules/.cache .expo .metro-cache
+yarn install
+eas build --platform android --profile preview
+```
