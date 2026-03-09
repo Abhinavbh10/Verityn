@@ -85,8 +85,8 @@ const CATEGORIES: Category[] = [
 const getCategoryColor = (categoryId: string) =>
   CATEGORIES.find(c => c.id === categoryId.toLowerCase())?.color || '#888888';
 
-// Truncate to ~60 words for proper filling
-const truncateToWords = (text: string, maxWords: number = 55): string => {
+// Truncate to ~100 words for fuller card content
+const truncateToWords = (text: string, maxWords: number = 100): string => {
   if (!text) return '';
   const words = text.split(/\s+/);
   if (words.length <= maxWords) return text;
@@ -191,9 +191,9 @@ const NewsCard = React.memo(({
           {article.title}
         </Text>
 
-        {/* Description */}
+        {/* Description - Show more content to fill the card */}
         <Text style={styles.description}>
-          {truncateToWords(article.description, 55)}
+          {truncateToWords(article.description, 100)}
         </Text>
 
         {/* Timestamp */}

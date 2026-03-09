@@ -75,10 +75,37 @@ JUNK_PATTERNS = [
     r'\[Advertisement\]',
     r'Sponsored content',
     r'ADVERTISEMENT',
+    # More junk patterns
+    r'Read more:.*',
+    r'Related:.*',
+    r'See also:.*',
+    r'More on this topic.*',
+    r'Image copyright.*',
+    r'Image caption.*',
+    r'Getty Images',
+    r'Reuters',
+    r'AP Photo',
+    r'AFP',
+    r'\(Photo:.*?\)',
+    r'\(Image:.*?\)',
+    r'Copyright \d{4}.*',
+    r'All rights reserved.*',
+    r'Loading\.\.\.',
+    r'Please wait\.\.\.',
+    r'This content is not available.*',
+    r'JavaScript is required.*',
+    r'Enable JavaScript.*',
+    r'Your browser.*not supported',
+    r'View more sharing options',
+    r'Share on WhatsApp',
+    r'Share on Twitter',
+    r'Share on Facebook',
+    r'Copy link',
+    r'Copied!',
 ]
 
 def clean_description(text: str) -> str:
-    """Remove junk content from article descriptions"""
+    """Remove junk content and bad characters from article descriptions"""
     if not text:
         return text
     
@@ -88,13 +115,37 @@ def clean_description(text: str) -> str:
     for pattern in JUNK_PATTERNS:
         cleaned = re.sub(pattern, '', cleaned, flags=re.IGNORECASE | re.DOTALL)
     
+    # Remove bad/junk characters
+    # Remove non-printable characters except newlines and spaces
+    cleaned = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', cleaned)
+    
+    # Remove excessive unicode symbols (but keep common ones)
+    cleaned = re.sub(r'[\u2028\u2029\u200b\u200c\u200d\ufeff]', '', cleaned)  # Line/paragraph separators, zero-width chars
+    
+    # Normalize unicode quotes and dashes
+    cleaned = cleaned.replace('\u2018', "'").replace('\u2019', "'")  # Smart single quotes
+    cleaned = cleaned.replace('\u201c', '"').replace('\u201d', '"')  # Smart double quotes
+    cleaned = cleaned.replace('\u2013', '-').replace('\u2014', '-')  # En/em dashes
+    cleaned = cleaned.replace('\u2026', '...')  # Ellipsis
+    cleaned = cleaned.replace('\u00a0', ' ')  # Non-breaking space
+    
+    # Remove HTML entities that weren't decoded
+    cleaned = re.sub(r'&[a-zA-Z]+;', ' ', cleaned)
+    cleaned = re.sub(r'&#\d+;', ' ', cleaned)
+    
     # Clean up multiple spaces and newlines
     cleaned = re.sub(r'\s+', ' ', cleaned)
     cleaned = cleaned.strip()
     
     # Remove leading/trailing punctuation artifacts
-    cleaned = re.sub(r'^[\s\-–—:,;]+', '', cleaned)
-    cleaned = re.sub(r'[\s\-–—:,;]+$', '', cleaned)
+    cleaned = re.sub(r'^[\s\-–—:,;•·]+', '', cleaned)
+    cleaned = re.sub(r'[\s\-–—:,;•·]+$', '', cleaned)
+    
+    # Remove duplicate punctuation
+    cleaned = re.sub(r'\.{2,}', '...', cleaned)
+    cleaned = re.sub(r'\?{2,}', '?', cleaned)
+    cleaned = re.sub(r'!{2,}', '!', cleaned)
+    cleaned = re.sub(r',{2,}', ',', cleaned)
     
     return cleaned.strip()
 
@@ -691,11 +742,11 @@ async def scrape_article_content(url: str) -> Optional[str]:
         if content:
             # Clean up the content
             content = re.sub(r'\s+', ' ', content).strip()
-            # Limit to reasonable length (500 chars)
-            if len(content) > 500:
+            # Limit to reasonable length (700 chars for fuller card content)
+            if len(content) > 700:
                 # Try to cut at sentence boundary
-                sentences = content[:550].split('. ')
-                content = '. '.join(sentences[:-1]) + '.' if len(sentences) > 1 else content[:500] + '...'
+                sentences = content[:750].split('. ')
+                content = '. '.join(sentences[:-1]) + '.' if len(sentences) > 1 else content[:700] + '...'
             return content
             
     except Exception as e:
@@ -746,11 +797,11 @@ async def fetch_rss_feed(url: str, source: str, category: str) -> List[NewsArtic
                 'needs_scraping': len(description) < MIN_DESCRIPTION_LENGTH
             })
         
-        # Scrape content for articles with short descriptions (limit to 3 per feed to avoid slowdown)
+        # Scrape content for articles with short descriptions (increased to 6 per feed for fuller content)
         scrape_tasks = []
         scrape_indices = []
         for i, entry in enumerate(entries_data):
-            if entry['needs_scraping'] and len(scrape_tasks) < 3:
+            if entry['needs_scraping'] and len(scrape_tasks) < 6:
                 scrape_tasks.append(scrape_article_content(entry['link']))
                 scrape_indices.append(i)
         
@@ -792,10 +843,10 @@ async def fetch_rss_feed(url: str, source: str, category: str) -> List[NewsArtic
                 print(f"Skipping too-short content: {entry['title'][:50]}...")
                 continue
             
-            # Limit to 500 chars, cut at sentence boundary
-            if len(description) > 500:
-                sentences = description[:520].split('. ')
-                description = '. '.join(sentences[:-1]) + '.' if len(sentences) > 1 else description[:500] + '...'
+            # Limit to 700 chars, cut at sentence boundary for fuller content
+            if len(description) > 700:
+                sentences = description[:750].split('. ')
+                description = '. '.join(sentences[:-1]) + '.' if len(sentences) > 1 else description[:700] + '...'
             
             article = NewsArticle(
                 id=generate_article_id(entry['title'], entry['link']),

@@ -23,12 +23,18 @@ European news readers who want quick, elegant news consumption on mobile.
 
 ## Implemented Features (as of March 9, 2026)
 
-### ✅ Bug Fixes (Latest Session)
+### ✅ Bug Fixes (Latest Session - March 9, 2026)
 - **CRITICAL FIX**: "No Stories Found" bug on home screen after category selection
   - Root cause: Race conditions in useNews hook category change detection
   - Fixed: useNews hook now properly detects category changes
   - Fixed: home.tsx initial fetch logic with proper preferencesLoaded check
   - Verified: Testing agent confirmed 100% pass rate
+
+- **Content Enhancement**: Fuller article descriptions
+  - Increased backend description limit from 500 to 700 characters
+  - Increased content scraping from 3 to 6 articles per feed
+  - Added comprehensive junk character cleaning (unicode, HTML entities, etc.)
+  - Frontend now displays up to 100 words instead of 55
 
 ### Onboarding Flow
 - [x] 3 intro slides (Swipe Through News, Your Feed Your Way, Read Anywhere)
