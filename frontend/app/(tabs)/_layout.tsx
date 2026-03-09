@@ -7,7 +7,16 @@ import { useTheme } from '../../src/utils/theme';
 import { TabRefreshEvents } from '../../src/utils/tabRefresh';
 
 export default function TabLayout() {
-  const { colors, isDark } = useTheme();
+  // Force dark theme for Inshorts-style UI
+  const isDark = true;
+  const colors = {
+    background: '#000000',
+    card: '#0A0A0A',
+    text: '#FFFFFF',
+    textMuted: '#888888',
+    border: '#222222',
+    primary: '#FF6B35',
+  };
   const insets = useSafeAreaInsets();
   
   // More robust bottom padding calculation for Android devices with gesture navigation
