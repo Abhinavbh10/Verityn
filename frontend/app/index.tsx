@@ -7,12 +7,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { getPreferences, savePreferences as savePrefs } from '../src/utils/storage';
-import { hasGDPRConsent, saveGDPRConsent } from '../src/utils/gdpr';
-import { secureStorage } from '../src/utils/secureStorage';
+import { appStorage } from '../src/utils/asyncStorage';
 import OnboardingIntro from '../src/components/OnboardingIntro';
-
-const ONBOARDING_COMPLETE_KEY = 'verityn_onboarding_intro_seen';
 
 interface Category {
   id: string;
@@ -117,10 +113,9 @@ function CategorySelection({ isDark, colors, onComplete }: {
     
     setLoading(true);
     try {
-      await saveGDPRConsent();
-      await savePrefs(selectedCategories);
-      // Mark that we should show feature overlay on home
-      await secureStorage.setItem('verityn_show_feature_overlay', 'true');
+      // Save using reliable AsyncStorage
+      await appStorage.saveGDPRConsent();
+      await appStorage.savePreferences(selectedCategories);
       // Pass categories directly to avoid storage read issues
       onComplete(selectedCategories);
     } catch (error) {
@@ -297,22 +292,22 @@ export default function WelcomeScreen() {
   const checkExistingState = async () => {
     try {
       // Check if user has GDPR consent AND preferences (returning user)
-      const hasConsent = await hasGDPRConsent();
-      const preferences = await getPreferences();
+      const hasConsent = await appStorage.getGDPRConsent();
+      const preferences = await appStorage.getPreferences();
       
       console.log('[Onboarding] hasConsent:', hasConsent, 'preferences:', preferences?.categories?.length);
       
       if (hasConsent && preferences?.categories?.length > 0) {
         // Returning user - go to home
-        router.replace('/(tabs)/home');
+        router.replace('/(drawer)/home');
         return;
       }
       
-      // Check if intro was already seen
-      const introSeen = await secureStorage.getItem(ONBOARDING_COMPLETE_KEY);
-      console.log('[Onboarding] introSeen:', introSeen);
+      // Check if intro was already seen (onboarding complete)
+      const onboardingComplete = await appStorage.isOnboardingComplete();
+      console.log('[Onboarding] onboardingComplete:', onboardingComplete);
       
-      if (introSeen === 'true') {
+      if (onboardingComplete) {
         // Intro seen but no preferences - show category selection
         setShowCategorySelection(true);
       } else {
@@ -327,8 +322,8 @@ export default function WelcomeScreen() {
   };
 
   const handleIntroComplete = async () => {
-    // Mark intro as seen
-    await secureStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
+    // Mark intro/onboarding as complete
+    await appStorage.setOnboardingComplete();
     setShowIntro(false);
     setShowCategorySelection(true);
   };
@@ -336,7 +331,7 @@ export default function WelcomeScreen() {
   const handleCategorySelectionComplete = (categories: string[]) => {
     // Pass categories directly via URL params to avoid storage read issues on Android
     router.replace({
-      pathname: '/(tabs)/home',
+      pathname: '/(drawer)/home',
       params: { initialCategories: categories.join(',') }
     });
   };

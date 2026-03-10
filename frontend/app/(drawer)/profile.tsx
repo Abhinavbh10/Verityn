@@ -1,0 +1,376 @@
+import React, { useEffect, useState } from 'react';
+import {
+  View, Text, StyleSheet, TouchableOpacity, ScrollView,
+  Alert, ActivityIndicator, Switch,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import Svg, { Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
+import { requestNotificationPermissions, getNotificationSettings, saveNotificationSettings, NotificationSettings } from '../../src/utils/notifications';
+import { getPreferences, savePreferences, clearPreferences } from '../../src/utils/storage';
+import { useTheme, ThemeMode } from '../../src/utils/theme';
+import { getOfflineArticleCount, clearAllOfflineArticles } from '../../src/utils/offline';
+import { withdrawConsentAndDeleteData, getStoredDataSummary } from '../../src/utils/gdpr';
+
+interface Category { id: string; name: string; icon: string; color: string; }
+
+// European Elegance theme colors
+const CATEGORIES: Category[] = [
+  { id: 'politics', name: 'Politics', icon: 'business', color: '#1E3A5F' },      // Navy
+  { id: 'business', name: 'Business', icon: 'briefcase', color: '#B45309' },     // Amber (primary)
+  { id: 'technology', name: 'Technology', icon: 'hardware-chip', color: '#7C3AED' },
+  { id: 'sports', name: 'Sports', icon: 'trophy', color: '#059669' },            // Emerald
+  { id: 'entertainment', name: 'Entertainment', icon: 'film', color: '#DB2777' },
+  { id: 'health', name: 'Health', icon: 'heart', color: '#DC2626' },
+  { id: 'science', name: 'Science', icon: 'flask', color: '#0891B2' },
+];
+
+export default function ProfileScreen() {
+  const { theme, setTheme, colors, isDark } = useTheme();
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [originalCategories, setOriginalCategories] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [offlineCount, setOfflineCount] = useState(0);
+  const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>({ enabled: false, dailyDigest: false, digestTime: '09:00', categories: [] });
+
+  useEffect(() => { loadPreferences(); loadNotificationSettings(); loadOfflineCount(); }, []);
+
+  const loadPreferences = async () => {
+    try {
+      const preferences = await getPreferences();
+      if (preferences) { setSelectedCategories(preferences.categories || []); setOriginalCategories(preferences.categories || []); }
+    } catch (error) { console.error('Error loading preferences:', error); }
+    setLoading(false);
+  };
+
+  const loadNotificationSettings = async () => { const settings = await getNotificationSettings(); setNotificationSettings(settings); };
+  const loadOfflineCount = async () => { const count = await getOfflineArticleCount(); setOfflineCount(count); };
+
+  const toggleCategory = (categoryId: string) => {
+    setSelectedCategories(prev => prev.includes(categoryId) ? prev.filter(id => id !== categoryId) : [...prev, categoryId]);
+  };
+
+  const hasChanges = () => {
+    if (selectedCategories.length !== originalCategories.length) return true;
+    return !selectedCategories.every(cat => originalCategories.includes(cat));
+  };
+
+  const handleSavePreferences = async () => {
+    if (selectedCategories.length === 0) { Alert.alert('Error', 'Please select at least one category'); return; }
+    setSaving(true);
+    try { await savePreferences(selectedCategories); setOriginalCategories(selectedCategories); Alert.alert('Success', 'Your preferences have been saved!'); }
+    catch (error) { console.error('Error saving preferences:', error); Alert.alert('Error', 'Failed to save preferences'); }
+    setSaving(false);
+  };
+
+  const toggleNotifications = async (value: boolean) => {
+    if (value) { const granted = await requestNotificationPermissions(); if (!granted) { Alert.alert('Permission Required', 'Please enable notifications in your device settings.'); return; } }
+    const newSettings = { ...notificationSettings, enabled: value };
+    setNotificationSettings(newSettings); await saveNotificationSettings(newSettings);
+  };
+
+  const toggleDailyDigest = async (value: boolean) => {
+    const newSettings = { ...notificationSettings, dailyDigest: value };
+    setNotificationSettings(newSettings); await saveNotificationSettings(newSettings);
+  };
+
+  const handleThemeChange = async (newTheme: ThemeMode) => {
+    await setTheme(newTheme);
+  };
+
+  const clearOfflineArticles = () => {
+    Alert.alert('Clear Offline Articles', 'Remove all saved offline articles?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Clear', style: 'destructive', onPress: async () => { await clearAllOfflineArticles(); setOfflineCount(0); } },
+    ]);
+  };
+
+  const resetPreferences = () => {
+    Alert.alert('Reset Preferences', 'This will take you back to the welcome screen.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Reset', style: 'destructive', onPress: async () => { await clearPreferences(); router.replace('/'); } },
+    ]);
+  };
+
+  const dynamicStyles = {
+    container: { backgroundColor: colors.background },
+    surface: { backgroundColor: colors.surface, borderColor: colors.border },
+    card: { backgroundColor: colors.card, borderColor: colors.border },
+    text: { color: colors.text },
+    textSecondary: { color: colors.textSecondary },
+    textMuted: { color: colors.textMuted },
+  };
+
+  if (loading) {
+    return <SafeAreaView style={[styles.container, dynamicStyles.container]} edges={['top']}><View style={styles.loadingContainer}><ActivityIndicator size="large" color={colors.primary} /></View></SafeAreaView>;
+  }
+
+  return (
+    <SafeAreaView style={[styles.container, dynamicStyles.container]} edges={['top']}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <View style={[styles.profileIcon, { backgroundColor: colors.primaryLight }]}>
+            <Svg width={40} height={40} viewBox="0 0 100 100">
+              <Defs><LinearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%"><Stop offset="0%" stopColor={colors.primary} /><Stop offset="100%" stopColor="#1D4ED8" /></LinearGradient></Defs>
+              <Circle cx="50" cy="50" r="45" fill="none" stroke="url(#logoGrad)" strokeWidth="4" />
+              <Path d="M30 35 L50 70 L70 35" fill="none" stroke="url(#logoGrad)" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
+            </Svg>
+          </View>
+          <Text style={[styles.headerTitle, dynamicStyles.text]}>Settings</Text>
+          <Text style={[styles.headerSubtitle, dynamicStyles.textMuted]}>Customize your experience</Text>
+        </View>
+
+        {/* Appearance Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, dynamicStyles.text]}>Appearance</Text>
+          <View style={styles.themeOptions}>
+            {(['light', 'dark', 'system'] as ThemeMode[]).map((themeOption) => (
+              <TouchableOpacity
+                key={themeOption}
+                style={[
+                  styles.themeOption,
+                  dynamicStyles.surface,
+                  theme === themeOption && { borderColor: colors.primary, backgroundColor: colors.primaryLight }
+                ]}
+                onPress={() => handleThemeChange(themeOption)}
+              >
+                <Ionicons 
+                  name={themeOption === 'light' ? 'sunny' : themeOption === 'dark' ? 'moon' : 'phone-portrait'} 
+                  size={24} 
+                  color={theme === themeOption ? colors.primary : colors.textMuted} 
+                />
+                <Text style={[styles.themeLabel, { color: theme === themeOption ? colors.primary : colors.textSecondary }]}>
+                  {themeOption.charAt(0).toUpperCase() + themeOption.slice(1)}
+                </Text>
+                {theme === themeOption && (
+                  <View style={[styles.themeCheck, { backgroundColor: colors.primary }]}>
+                    <Ionicons name="checkmark" size={12} color="#fff" />
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Offline Reading Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, dynamicStyles.text]}>Offline Reading</Text>
+          <View style={[styles.settingRow, dynamicStyles.surface]}>
+            <View style={styles.settingInfo}>
+              <View style={[styles.settingIcon, { backgroundColor: colors.primaryLight }]}>
+                <Ionicons name="cloud-offline" size={20} color={colors.primary} />
+              </View>
+              <View>
+                <Text style={[styles.settingLabel, dynamicStyles.text]}>Saved Articles</Text>
+                <Text style={[styles.settingDescription, dynamicStyles.textMuted]}>{offlineCount} articles saved for offline</Text>
+              </View>
+            </View>
+            {offlineCount > 0 && (
+              <TouchableOpacity onPress={clearOfflineArticles} style={styles.clearButton}>
+                <Text style={styles.clearButtonText}>Clear</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        {/* Notifications Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, dynamicStyles.text]}>Notifications</Text>
+          <View style={[styles.settingRow, dynamicStyles.surface]}>
+            <View style={styles.settingInfo}>
+              <View style={[styles.settingIcon, { backgroundColor: '#EFF6FF' }]}><Ionicons name="notifications" size={20} color="#2563EB" /></View>
+              <View><Text style={[styles.settingLabel, dynamicStyles.text]}>Push Notifications</Text><Text style={[styles.settingDescription, dynamicStyles.textMuted]}>Receive news alerts</Text></View>
+            </View>
+            <Switch value={notificationSettings.enabled} onValueChange={toggleNotifications} trackColor={{ false: colors.border, true: '#BFDBFE' }} thumbColor={notificationSettings.enabled ? '#2563EB' : '#9CA3AF'} />
+          </View>
+          {notificationSettings.enabled && (
+            <View style={[styles.settingRow, dynamicStyles.surface]}>
+              <View style={styles.settingInfo}>
+                <View style={[styles.settingIcon, { backgroundColor: '#FEF3C7' }]}><Ionicons name="sunny" size={20} color="#D97706" /></View>
+                <View><Text style={[styles.settingLabel, dynamicStyles.text]}>Daily Digest</Text><Text style={[styles.settingDescription, dynamicStyles.textMuted]}>Get news summary at 9:00 AM</Text></View>
+              </View>
+              <Switch value={notificationSettings.dailyDigest} onValueChange={toggleDailyDigest} trackColor={{ false: colors.border, true: '#FDE68A' }} thumbColor={notificationSettings.dailyDigest ? '#D97706' : '#9CA3AF'} />
+            </View>
+          )}
+        </View>
+
+        {/* Categories Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, dynamicStyles.text]}>News Categories</Text>
+          <Text style={[styles.sectionDescription, dynamicStyles.textMuted]}>Select the categories you want to see</Text>
+          <View style={styles.categoriesGrid}>
+            {CATEGORIES.map((category) => {
+              const isSelected = selectedCategories.includes(category.id);
+              return (
+                <TouchableOpacity key={category.id} style={[styles.categoryCard, dynamicStyles.surface, isSelected && { borderColor: category.color, backgroundColor: `${category.color}15` }]} onPress={() => toggleCategory(category.id)} activeOpacity={0.7}>
+                  <View style={[styles.iconContainer, { backgroundColor: `${category.color}15` }]}><Ionicons name={category.icon as any} size={24} color={category.color} /></View>
+                  <Text style={[styles.categoryName, { color: isSelected ? category.color : colors.textSecondary }]}>{category.name}</Text>
+                  {isSelected && <View style={[styles.checkmark, { backgroundColor: category.color }]}><Ionicons name="checkmark" size={12} color="#fff" /></View>}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        <View style={styles.summaryContainer}><Ionicons name="information-circle" size={20} color={colors.textMuted} /><Text style={[styles.summaryText, dynamicStyles.textMuted]}>{selectedCategories.length} categories selected</Text></View>
+
+        <TouchableOpacity style={[styles.saveButton, (!hasChanges() || selectedCategories.length === 0) && styles.saveButtonDisabled]} onPress={handleSavePreferences} disabled={!hasChanges() || selectedCategories.length === 0 || saving} activeOpacity={0.8}>
+          {saving ? <ActivityIndicator color="#fff" /> : <><Ionicons name="checkmark-circle" size={20} color="#fff" /><Text style={styles.saveButtonText}>Save Changes</Text></>}
+        </TouchableOpacity>
+
+        <View style={styles.resetSection}>
+          <TouchableOpacity style={styles.resetButton} onPress={resetPreferences} activeOpacity={0.7}>
+            <Ionicons name="refresh-circle" size={20} color="#DC2626" /><Text style={styles.resetButtonText}>Reset All Preferences</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Privacy & Data Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, dynamicStyles.text]}>Privacy & Data</Text>
+          <Text style={[styles.sectionDescription, dynamicStyles.textMuted]}>Manage your data and privacy settings under GDPR</Text>
+          
+          <TouchableOpacity 
+            style={[styles.settingRow, dynamicStyles.surface]}
+            onPress={() => router.push('/privacy')}
+            data-testid="privacy-policy-btn"
+          >
+            <View style={styles.settingInfo}>
+              <View style={[styles.settingIcon, { backgroundColor: '#F0FDF4' }]}>
+                <Ionicons name="document-text" size={20} color="#16A34A" />
+              </View>
+              <View>
+                <Text style={[styles.settingLabel, dynamicStyles.text]}>Privacy Policy</Text>
+                <Text style={[styles.settingDescription, dynamicStyles.textMuted]}>Read our privacy policy</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.settingRow, dynamicStyles.surface]}
+            onPress={async () => {
+              const summary = await getStoredDataSummary();
+              Alert.alert(
+                'Your Stored Data',
+                summary.length > 0 
+                  ? `The following data is stored locally on your device:\n\n${summary.map(s => `• ${s}`).join('\n')}`
+                  : 'No data is currently stored on your device.',
+                [{ text: 'OK' }]
+              );
+            }}
+            data-testid="view-data-btn"
+          >
+            <View style={styles.settingInfo}>
+              <View style={[styles.settingIcon, { backgroundColor: '#EFF6FF' }]}>
+                <Ionicons name="folder-open" size={20} color="#2563EB" />
+              </View>
+              <View>
+                <Text style={[styles.settingLabel, dynamicStyles.text]}>View My Data</Text>
+                <Text style={[styles.settingDescription, dynamicStyles.textMuted]}>See what's stored on your device</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.settingRow, dynamicStyles.surface]}
+            onPress={() => {
+              Alert.alert(
+                'Delete All My Data',
+                'This will permanently delete all your data including:\n\n• News preferences\n• Bookmarked articles\n• Custom keywords\n• Location preferences\n• Offline articles\n• Theme settings\n\nYou will be returned to the welcome screen.\n\nThis action cannot be undone.',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  { 
+                    text: 'Delete All Data', 
+                    style: 'destructive', 
+                    onPress: async () => {
+                      const success = await withdrawConsentAndDeleteData();
+                      if (success) {
+                        Alert.alert('Data Deleted', 'All your data has been removed.', [
+                          { text: 'OK', onPress: () => router.replace('/') }
+                        ]);
+                      } else {
+                        Alert.alert('Error', 'Failed to delete data. Please try again.');
+                      }
+                    } 
+                  },
+                ]
+              );
+            }}
+            data-testid="delete-data-btn"
+          >
+            <View style={styles.settingInfo}>
+              <View style={[styles.settingIcon, { backgroundColor: '#FEF2F2' }]}>
+                <Ionicons name="trash" size={20} color="#DC2626" />
+              </View>
+              <View>
+                <Text style={[styles.settingLabel, dynamicStyles.text]}>Delete My Data</Text>
+                <Text style={[styles.settingDescription, dynamicStyles.textMuted]}>Remove all stored data (GDPR right to erasure)</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+          </TouchableOpacity>
+        </View>
+
+        <View style={[styles.appInfo, { borderTopColor: colors.border }]}>
+          <Text style={[styles.appName, { color: colors.primary }]}>Verityn</Text>
+          <Text style={[styles.appVersion, dynamicStyles.textMuted]}>Version 1.3.0</Text>
+          <Text style={[styles.appCopyright, dynamicStyles.textMuted]}>Truth in Every Story</Text>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+// European Elegance styles
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  scrollView: { flex: 1 },
+  scrollContent: { padding: 20, paddingBottom: 40 },
+  header: { alignItems: 'center', marginBottom: 28, paddingTop: 8 },
+  profileIcon: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  headerTitle: { fontSize: 24, fontWeight: '700', marginBottom: 4, letterSpacing: -0.3 },
+  headerSubtitle: { fontSize: 15 },
+  section: { marginBottom: 24 },
+  sectionTitle: { fontSize: 18, fontWeight: '600', marginBottom: 6 },
+  sectionDescription: { fontSize: 14, marginBottom: 16 },
+  
+  // Theme options
+  themeOptions: { flexDirection: 'row', justifyContent: 'space-between', gap: 10 },
+  themeOption: { flex: 1, alignItems: 'center', paddingVertical: 16, borderRadius: 14, borderWidth: 2, position: 'relative' },
+  themeLabel: { fontSize: 13, fontWeight: '500', marginTop: 8 },
+  themeCheck: { position: 'absolute', top: 8, right: 8, width: 18, height: 18, borderRadius: 9, justifyContent: 'center', alignItems: 'center' },
+  
+  // Settings
+  settingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderRadius: 14, marginBottom: 10, borderWidth: 1 },
+  settingInfo: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+  settingIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  settingLabel: { fontSize: 15, fontWeight: '600' },
+  settingDescription: { fontSize: 12, marginTop: 2 },
+  clearButton: { backgroundColor: '#FEE2E2', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
+  clearButtonText: { fontSize: 13, color: '#DC2626', fontWeight: '500' },
+  
+  // Categories
+  categoriesGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  categoryCard: { width: '48%', borderRadius: 16, padding: 14, marginBottom: 10, borderWidth: 2, position: 'relative' },
+  iconContainer: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
+  categoryName: { fontSize: 14, fontWeight: '600' },
+  checkmark: { position: 'absolute', top: 10, right: 10, width: 20, height: 20, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  
+  // Actions
+  summaryContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 20 },
+  summaryText: { fontSize: 14 },
+  saveButton: { backgroundColor: '#B45309', borderRadius: 14, paddingVertical: 16, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, marginBottom: 16, shadowColor: '#B45309', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 8, elevation: 4 },
+  saveButtonDisabled: { backgroundColor: '#D6D3D1', shadowOpacity: 0 },
+  saveButtonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
+  resetSection: { alignItems: 'center', marginTop: 8, marginBottom: 32 },
+  resetButton: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12, paddingHorizontal: 16 },
+  resetButtonText: { fontSize: 15, color: '#DC2626', fontWeight: '500' },
+  appInfo: { alignItems: 'center', paddingTop: 24, borderTopWidth: 1 },
+  appName: { fontSize: 18, fontWeight: '600', marginBottom: 4 },
+  appVersion: { fontSize: 13, marginBottom: 4 },
+  appCopyright: { fontSize: 12 },
+});

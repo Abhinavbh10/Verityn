@@ -3,6 +3,7 @@ import { View, Platform } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SplashScreen from 'expo-splash-screen';
 import { ThemeProvider } from '../src/utils/theme';
 
@@ -56,7 +57,7 @@ function RootLayoutContent() {
         }}
       >
         <Stack.Screen name="index" />
-        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="(drawer)" />
       </Stack>
     </View>
   );
@@ -64,10 +65,12 @@ function RootLayoutContent() {
 
 export default function RootLayout() {
   return (
-    <SafeAreaProvider style={{ backgroundColor: DARK_BACKGROUND }}>
-      <ThemeProvider>
-        <RootLayoutContent />
-      </ThemeProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider style={{ backgroundColor: DARK_BACKGROUND }}>
+        <ThemeProvider>
+          <RootLayoutContent />
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
