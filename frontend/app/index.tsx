@@ -96,7 +96,7 @@ const TermsModal = ({ visible, onClose, isDark }: { visible: boolean; onClose: (
 function CategorySelection({ isDark, colors, onComplete }: { 
   isDark: boolean; 
   colors: any;
-  onComplete: () => void;
+  onComplete: (categories: string[]) => void;
 }) {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -121,7 +121,8 @@ function CategorySelection({ isDark, colors, onComplete }: {
       await savePrefs(selectedCategories);
       // Mark that we should show feature overlay on home
       await secureStorage.setItem('verityn_show_feature_overlay', 'true');
-      onComplete();
+      // Pass categories directly to avoid storage read issues
+      onComplete(selectedCategories);
     } catch (error) {
       console.error('Error saving:', error);
       setLoading(false);
@@ -332,8 +333,12 @@ export default function WelcomeScreen() {
     setShowCategorySelection(true);
   };
 
-  const handleCategorySelectionComplete = () => {
-    router.replace('/(tabs)/home');
+  const handleCategorySelectionComplete = (categories: string[]) => {
+    // Pass categories directly via URL params to avoid storage read issues on Android
+    router.replace({
+      pathname: '/(tabs)/home',
+      params: { initialCategories: categories.join(',') }
+    });
   };
 
   // Loading state

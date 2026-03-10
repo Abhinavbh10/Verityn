@@ -19,7 +19,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons';
 import { formatDistanceToNow, parseISO, isValid } from 'date-fns';
 import * as WebBrowser from 'expo-web-browser';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 
 // Services & Hooks
@@ -236,6 +236,9 @@ export default function HomeScreen() {
   const isDark = true; // Force dark theme for Inshorts style
   const colors = COLORS.dark;
   const insets = useSafeAreaInsets();
+  
+  // Get categories passed from onboarding (bypasses storage read issues on Android)
+  const { initialCategories } = useLocalSearchParams<{ initialCategories?: string }>();
 
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [activeFilter, setActiveFilter] = useState<string>('all');
@@ -269,17 +272,34 @@ export default function HomeScreen() {
 
   useShakeDetector({ onShake: handleShake });
 
-  // Load preferences on mount
+  // Load preferences on mount - prioritize params from onboarding (fixes Android storage bug)
   useEffect(() => {
     const loadPreferences = async () => {
       try {
+        // PRIORITY 1: Categories passed directly from onboarding (bypasses storage issues)
+        if (initialCategories && initialCategories.length > 0) {
+          const categoriesFromParams = initialCategories.split(',').filter(c => c.trim());
+          console.log('[Home] Using categories from params:', categoriesFromParams);
+          setSelectedCategories(categoriesFromParams);
+          setPreferencesLoaded(true);
+          
+          // Check for feature overlay
+          const shouldShowOverlay = await secureStorage.getItem('verityn_show_feature_overlay');
+          if (shouldShowOverlay === 'true') {
+            setShowFeatureOverlay(true);
+            await secureStorage.deleteItem('verityn_show_feature_overlay');
+          }
+          return;
+        }
+        
+        // PRIORITY 2: Read from storage (for returning users)
         const preferences = await getPreferences();
-        console.log('[Home] Loaded preferences:', preferences?.categories);
+        console.log('[Home] Loaded preferences from storage:', preferences?.categories);
         
         if (preferences?.categories?.length) {
           setSelectedCategories(preferences.categories);
         } else {
-          // DEFAULT CATEGORIES for first launch - ensures news always loads
+          // PRIORITY 3: Default categories as fallback
           const defaultCategories = ['politics', 'business', 'technology'];
           console.log('[Home] No saved categories, using defaults:', defaultCategories);
           setSelectedCategories(defaultCategories);
@@ -300,7 +320,7 @@ export default function HomeScreen() {
       }
     };
     loadPreferences();
-  }, []);
+  }, [initialCategories]);
 
   // Trigger fetch when categories are loaded and changed
   useEffect(() => {
