@@ -93,14 +93,50 @@ export function useNews(
 
       setError(null);
 
-      // Check if online
-      const online = NetworkManager.isOnline();
-      setIsOffline(!online);
+      // ALWAYS try API first - NetworkManager.isOnline() is unreliable on Android first launch
+      // Only use offline cache if the API call actually fails
+      try {
+        console.log('[useNews] Fetching from API...');
+        
+        const response = await NewsService.fetchNews(
+          categories,
+          opts.pageSize!,
+          offset,
+          { forceRefresh: isRefresh }
+        );
 
-      if (!online) {
-        // Try to load from offline cache
-        console.log('[useNews] Offline - loading from cache');
+        if (!isMounted.current) return;
+
+        // API succeeded - we're online
+        setIsOffline(false);
+        setIsOfflineData(false);
+
+        if (isInitial) {
+          setArticles(response.articles);
+        } else {
+          // Append new articles, avoiding duplicates
+          setArticles(prev => {
+            const existingIds = new Set(prev.map(a => a.id));
+            const newArticles = response.articles.filter(a => !existingIds.has(a.id));
+            return [...prev, ...newArticles];
+          });
+        }
+
+        setHasMore(response.has_more);
+        setCurrentOffset(offset + response.articles.length);
+        setLastUpdated(new Date());
+
+        // Cache for offline use
+        if (opts.cacheForOffline && isInitial && response.articles.length > 0) {
+          OfflineNewsCache.cacheArticles(response.articles, categories);
+        }
+
+      } catch (apiError: any) {
+        // API failed - try offline cache
+        console.log('[useNews] API failed, trying offline cache:', apiError.message);
+        setIsOffline(true);
         setLoadingState('offline-loading');
+        
         const cachedArticles = await OfflineNewsCache.getCachedArticles(categories);
         
         if (cachedArticles.length > 0) {
@@ -109,59 +145,24 @@ export function useNews(
           setHasMore(false);
           setError('You\'re offline. Showing cached articles.');
         } else {
-          setError('You\'re offline and no cached articles are available.');
+          // No cache available
+          throw apiError; // Re-throw to be caught by outer catch
         }
-        return;
-      }
-
-      // Fetch from API
-      const response = await NewsService.fetchNews(
-        categories,
-        opts.pageSize!,
-        offset,
-        { forceRefresh: isRefresh }
-      );
-
-      if (!isMounted.current) return;
-
-      if (isInitial) {
-        setArticles(response.articles);
-      } else {
-        // Append new articles, avoiding duplicates
-        setArticles(prev => {
-          const existingIds = new Set(prev.map(a => a.id));
-          const newArticles = response.articles.filter(a => !existingIds.has(a.id));
-          return [...prev, ...newArticles];
-        });
-      }
-
-      setHasMore(response.has_more);
-      setCurrentOffset(offset + response.articles.length);
-      setIsOfflineData(false);
-      setLastUpdated(new Date());
-
-      // Cache articles for offline reading
-      if (opts.cacheForOffline && response.articles.length > 0) {
-        await OfflineNewsCache.cacheArticles(response.articles, categories);
       }
 
     } catch (err: any) {
       if (!isMounted.current) return;
 
-      console.error('[useNews] Fetch error:', err);
-
-      // Get user-friendly error message
+      console.error('[useNews] Error fetching news:', err);
+      
       let errorMessage = 'Failed to load news. Please try again.';
-      if (err instanceof NewsServiceError) {
-        errorMessage = err.getUserMessage();
-      }
-
-      // If we have cached data, show it with error banner
-      const cachedArticles = await OfflineNewsCache.getCachedArticles(categories);
-      if (cachedArticles.length > 0 && articles.length === 0) {
-        setArticles(cachedArticles);
-        setIsOfflineData(true);
-        errorMessage = 'Unable to refresh. Showing cached articles.';
+      
+      if (err instanceof Error) {
+        if (err.message.includes('timeout')) {
+          errorMessage = 'Request timed out. Please check your connection.';
+        } else if (err.message.includes('network') || err.message.includes('Network')) {
+          errorMessage = 'Network error. Please check your connection.';
+        }
       }
 
       setError(errorMessage);
@@ -170,7 +171,7 @@ export function useNews(
         setLoadingState('idle');
       }
     }
-  }, [categories, opts.pageSize, opts.cacheForOffline, articles.length]);
+  }, [categories, opts.pageSize, opts.cacheForOffline]);
 
   /**
    * Refresh news (pull to refresh)
