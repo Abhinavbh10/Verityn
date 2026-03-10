@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import Svg, { Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { requestNotificationPermissions, getNotificationSettings, saveNotificationSettings, NotificationSettings } from '../../src/utils/notifications';
-import { getPreferences, savePreferences, clearPreferences } from '../../src/utils/storage';
+import { appStorage } from '../../src/utils/asyncStorage';
 import { useTheme, ThemeMode } from '../../src/utils/theme';
 import { getOfflineArticleCount, clearAllOfflineArticles } from '../../src/utils/offline';
 import { withdrawConsentAndDeleteData, getStoredDataSummary } from '../../src/utils/gdpr';
@@ -39,7 +39,7 @@ export default function ProfileScreen() {
 
   const loadPreferences = async () => {
     try {
-      const preferences = await getPreferences();
+      const preferences = await appStorage.getPreferences();
       if (preferences) { setSelectedCategories(preferences.categories || []); setOriginalCategories(preferences.categories || []); }
     } catch (error) { console.error('Error loading preferences:', error); }
     setLoading(false);
@@ -60,7 +60,7 @@ export default function ProfileScreen() {
   const handleSavePreferences = async () => {
     if (selectedCategories.length === 0) { Alert.alert('Error', 'Please select at least one category'); return; }
     setSaving(true);
-    try { await savePreferences(selectedCategories); setOriginalCategories(selectedCategories); Alert.alert('Success', 'Your preferences have been saved!'); }
+    try { await appStorage.savePreferences(selectedCategories); setOriginalCategories(selectedCategories); Alert.alert('Success', 'Your preferences have been saved!'); }
     catch (error) { console.error('Error saving preferences:', error); Alert.alert('Error', 'Failed to save preferences'); }
     setSaving(false);
   };
@@ -90,7 +90,7 @@ export default function ProfileScreen() {
   const resetPreferences = () => {
     Alert.alert('Reset Preferences', 'This will take you back to the welcome screen.', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Reset', style: 'destructive', onPress: async () => { await clearPreferences(); router.replace('/'); } },
+      { text: 'Reset', style: 'destructive', onPress: async () => { await appStorage.clearAll(); router.replace('/'); } },
     ]);
   };
 

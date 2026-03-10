@@ -1,4 +1,4 @@
-import { secureStorage } from './secureStorage';
+import { appStorage } from './asyncStorage';
 
 const BOOKMARKS_KEY = 'verityn_bookmarked_articles';
 
@@ -16,7 +16,7 @@ export interface BookmarkedArticle {
 
 export const getBookmarks = async (): Promise<BookmarkedArticle[]> => {
   try {
-    const stored = await secureStorage.getItem(BOOKMARKS_KEY);
+    const stored = await appStorage.getItem(BOOKMARKS_KEY);
     if (stored) {
       return JSON.parse(stored);
     }
@@ -38,7 +38,7 @@ export const addBookmark = async (article: Omit<BookmarkedArticle, 'bookmarkedAt
     };
     
     bookmarks.unshift(newBookmark);
-    await secureStorage.setItem(BOOKMARKS_KEY, JSON.stringify(bookmarks));
+    await appStorage.setItem(BOOKMARKS_KEY, JSON.stringify(bookmarks));
     return true;
   } catch (error) {
     console.error('Error adding bookmark:', error);
@@ -50,7 +50,7 @@ export const removeBookmark = async (articleId: string): Promise<boolean> => {
   try {
     const bookmarks = await getBookmarks();
     const filtered = bookmarks.filter(b => b.id !== articleId);
-    await secureStorage.setItem(BOOKMARKS_KEY, JSON.stringify(filtered));
+    await appStorage.setItem(BOOKMARKS_KEY, JSON.stringify(filtered));
     return true;
   } catch (error) {
     console.error('Error removing bookmark:', error);
@@ -71,7 +71,7 @@ export const isBookmarked = async (articleId: string): Promise<boolean> => {
 export const clearAllBookmarks = async (): Promise<boolean> => {
   try {
     // Set to empty array instead of deleting, to avoid any null issues
-    await secureStorage.setItem(BOOKMARKS_KEY, JSON.stringify([]));
+    await appStorage.setItem(BOOKMARKS_KEY, JSON.stringify([]));
     return true;
   } catch (error) {
     console.error('Error clearing bookmarks:', error);
