@@ -299,7 +299,7 @@ export default function WelcomeScreen() {
       
       if (hasConsent && preferences?.categories?.length > 0) {
         // Returning user - go to home
-        router.replace('/(drawer)/home');
+        router.replace('/(tabs)/home');
         return;
       }
       
@@ -331,7 +331,7 @@ export default function WelcomeScreen() {
   const handleCategorySelectionComplete = (categories: string[]) => {
     // Pass categories directly via URL params to avoid storage read issues on Android
     router.replace({
-      pathname: '/(drawer)/home',
+      pathname: '/(tabs)/home',
       params: { initialCategories: categories.join(',') }
     });
   };

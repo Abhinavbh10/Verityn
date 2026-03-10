@@ -3,7 +3,6 @@ import { View, Platform } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SplashScreen from 'expo-splash-screen';
 import { ThemeProvider } from '../src/utils/theme';
 
@@ -17,13 +16,11 @@ const DARK_BACKGROUND = '#000000';
 function useWebDarkBackground() {
   useEffect(() => {
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
-      // Set body and html backgrounds to black
       document.documentElement.style.backgroundColor = DARK_BACKGROUND;
       document.body.style.backgroundColor = DARK_BACKGROUND;
       document.body.style.margin = '0';
       document.body.style.padding = '0';
       
-      // Also target the root element
       const rootEl = document.getElementById('root');
       if (rootEl) {
         rootEl.style.backgroundColor = DARK_BACKGROUND;
@@ -34,11 +31,9 @@ function useWebDarkBackground() {
 }
 
 function RootLayoutContent() {
-  // Apply dark background for web
   useWebDarkBackground();
   
   useEffect(() => {
-    // Hide splash screen after a short delay
     const hideSplash = async () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       await SplashScreen.hideAsync();
@@ -57,7 +52,7 @@ function RootLayoutContent() {
         }}
       >
         <Stack.Screen name="index" />
-        <Stack.Screen name="(drawer)" />
+        <Stack.Screen name="(tabs)" />
       </Stack>
     </View>
   );
@@ -65,12 +60,10 @@ function RootLayoutContent() {
 
 export default function RootLayout() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider style={{ backgroundColor: DARK_BACKGROUND }}>
-        <ThemeProvider>
-          <RootLayoutContent />
-        </ThemeProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <SafeAreaProvider style={{ backgroundColor: DARK_BACKGROUND }}>
+      <ThemeProvider>
+        <RootLayoutContent />
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }

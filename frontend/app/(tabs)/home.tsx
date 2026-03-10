@@ -29,10 +29,9 @@ import { NetworkStatusBanner } from '../../src/components/NetworkStatusBanner';
 
 // Utils
 import { addBookmark, removeBookmark, getBookmarks } from '../../src/utils/bookmarks';
-import { getPreferences } from '../../src/utils/storage';
+import { appStorage } from '../../src/utils/asyncStorage';
 import { useShakeDetector } from '../../src/hooks/useShakeDetector';
 import { TabRefreshEvents } from '../../src/utils/tabRefresh';
-import { secureStorage } from '../../src/utils/secureStorage';
 import FeatureOverlay from '../../src/components/FeatureOverlay';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -283,17 +282,17 @@ export default function HomeScreen() {
           setSelectedCategories(categoriesFromParams);
           setPreferencesLoaded(true);
           
-          // Check for feature overlay
-          const shouldShowOverlay = await secureStorage.getItem('verityn_show_feature_overlay');
-          if (shouldShowOverlay === 'true') {
+          // Check for feature overlay using reliable AsyncStorage
+          const shouldShowOverlay = await appStorage.shouldShowFeatureOverlay();
+          if (shouldShowOverlay) {
             setShowFeatureOverlay(true);
-            await secureStorage.deleteItem('verityn_show_feature_overlay');
+            await appStorage.setFeatureOverlayShown();
           }
           return;
         }
         
-        // PRIORITY 2: Read from storage (for returning users)
-        const preferences = await getPreferences();
+        // PRIORITY 2: Read from AsyncStorage (reliable on Android)
+        const preferences = await appStorage.getPreferences();
         console.log('[Home] Loaded preferences from storage:', preferences?.categories);
         
         if (preferences?.categories?.length) {
@@ -305,10 +304,10 @@ export default function HomeScreen() {
           setSelectedCategories(defaultCategories);
         }
 
-        const shouldShowOverlay = await secureStorage.getItem('verityn_show_feature_overlay');
-        if (shouldShowOverlay === 'true') {
+        const shouldShowOverlay = await appStorage.shouldShowFeatureOverlay();
+        if (shouldShowOverlay) {
           setShowFeatureOverlay(true);
-          await secureStorage.deleteItem('verityn_show_feature_overlay');
+          await appStorage.setFeatureOverlayShown();
         }
 
         setPreferencesLoaded(true);
