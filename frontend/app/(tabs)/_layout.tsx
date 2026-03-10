@@ -40,10 +40,8 @@ export default function TabLayout() {
   
   return (
     <Tabs
-      sceneContainerStyle={{ backgroundColor: colors.background }}
       screenOptions={{
         headerShown: false,
-        sceneStyle: { backgroundColor: colors.background },
         tabBarStyle: {
           backgroundColor: colors.card,
           borderTopColor: colors.border,

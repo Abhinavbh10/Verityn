@@ -1,19 +1,18 @@
 /**
- * Home Screen - Inshorts-Inspired Full-Screen News Cards
+ * Home Screen - Clean Architecture Version
  * 
- * Design inspired by Inshorts:
- * - Full-screen cards with swipe navigation
- * - Image at top (45-50%)
- * - Compact content area with source, headline, description
- * - "Tap to read more" bar at bottom
- * - Dark theme aesthetic
+ * Key principles:
+ * 1. Single source of truth for storage (Storage from src/storage)
+ * 2. Simple state management
+ * 3. Clear data flow: Storage -> State -> UI
+ * 4. No network pre-checks (unreliable on Android)
  */
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Dimensions,
-  FlatList, Share, Platform, Vibration, Animated, Image,
-  RefreshControl, useColorScheme, StatusBar,
+  FlatList, Share, Platform, Vibration, Image,
+  RefreshControl, StatusBar, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,167 +21,123 @@ import * as WebBrowser from 'expo-web-browser';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 
-// Services & Hooks
+// Unified imports
+import Storage from '../../src/storage';
 import { useNews } from '../../src/hooks/useNews';
 import { Article } from '../../src/services/NewsService';
-import { NetworkStatusBanner } from '../../src/components/NetworkStatusBanner';
-
-// Utils
-import { addBookmark, removeBookmark, getBookmarks } from '../../src/utils/bookmarks';
-import { appStorage } from '../../src/utils/asyncStorage';
-import { useShakeDetector } from '../../src/hooks/useShakeDetector';
-import { TabRefreshEvents } from '../../src/utils/tabRefresh';
-import FeatureOverlay from '../../src/components/FeatureOverlay';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-// Dark-first color scheme (Inshorts style)
-const COLORS = {
-  light: {
-    background: '#FDFBF7',
-    surface: '#FFFFFF',
-    cardBg: '#1A1A1A',
-    text: '#FFFFFF',
-    textSecondary: '#B8B8B8',
-    textMuted: '#888888',
-    accent: '#FF6B35',
-    border: '#333333',
-    headerBg: '#000000',
-    tabBg: '#0A0A0A',
-  },
-  dark: {
-    background: '#000000',
-    surface: '#0A0A0A',
-    cardBg: '#0A0A0A',
-    text: '#FFFFFF',
-    textSecondary: '#B8B8B8',
-    textMuted: '#888888',
-    accent: '#FF6B35',
-    border: '#222222',
-    headerBg: '#000000',
-    tabBg: '#0A0A0A',
-  },
-};
-
-interface Category {
-  id: string;
-  name: string;
-  color: string;
-  trending?: boolean;
-}
-
-const CATEGORIES: Category[] = [
-  { id: 'politics', name: 'Politics', color: '#E53935' },
-  { id: 'business', name: 'Business', color: '#FB8C00' },
-  { id: 'technology', name: 'Technology', color: '#8E24AA' },
-  { id: 'sports', name: 'Sports', color: '#43A047' },
-  { id: 'entertainment', name: 'Entertainment', color: '#E91E63' },
-  { id: 'health', name: 'Health', color: '#F44336' },
-  { id: 'science', name: 'Science', color: '#00ACC1' },
+// Categories
+const CATEGORIES = [
+  { id: 'politics', name: 'Politics' },
+  { id: 'business', name: 'Business' },
+  { id: 'technology', name: 'Technology' },
+  { id: 'sports', name: 'Sports' },
+  { id: 'entertainment', name: 'Entertainment' },
+  { id: 'health', name: 'Health' },
+  { id: 'science', name: 'Science' },
 ];
 
-const getCategoryColor = (categoryId: string) =>
-  CATEGORIES.find(c => c.id === categoryId.toLowerCase())?.color || '#888888';
+// Dark theme colors
+const COLORS = {
+  background: '#000000',
+  card: '#0A0A0A',
+  cardBorder: '#1A1A1A',
+  text: '#FFFFFF',
+  textSecondary: '#B8B8B8',
+  textMuted: '#666666',
+  primary: '#FF6B35',
+  error: '#FF4444',
+  success: '#00C853',
+};
 
-// Truncate to ~100 words for fuller card content
-const truncateToWords = (text: string, maxWords: number = 100): string => {
+// Truncate text helper
+const truncateText = (text: string, maxWords: number = 80): string => {
   if (!text) return '';
   const words = text.split(/\s+/);
   if (words.length <= maxWords) return text;
   return words.slice(0, maxWords).join(' ') + '...';
 };
 
-// News Card Component - Inshorts Style
-interface NewsCardProps {
+// Format time helper
+const formatTime = (dateStr: string): string => {
+  try {
+    const date = parseISO(dateStr);
+    if (!isValid(date)) return '';
+    return formatDistanceToNow(date, { addSuffix: true });
+  } catch {
+    return '';
+  }
+};
+
+// Article Card Component
+const ArticleCard = React.memo(({ 
+  article, 
+  cardHeight, 
+  isBookmarked,
+  onBookmark,
+  onShare,
+  onReadMore,
+}: {
   article: Article;
-  index: number;
   cardHeight: number;
   isBookmarked: boolean;
-  onBookmark: (article: Article) => void;
-  onShare: (article: Article) => void;
-  onOpenArticle: (url: string) => void;
-}
-
-const NewsCard = React.memo(({
-  article, index, cardHeight, isBookmarked,
-  onBookmark, onShare, onOpenArticle
-}: NewsCardProps) => {
-  const [imageError, setImageError] = useState(false);
-  const bookmarkAnim = useRef(new Animated.Value(1)).current;
-  const categoryColor = getCategoryColor(article.category);
-
-  const timeAgo = useCallback(() => {
-    try {
-      const date = parseISO(article.published);
-      if (isValid(date)) {
-        const distance = formatDistanceToNow(date, { addSuffix: false });
-        return distance.replace('about ', '');
-      }
-    } catch { }
-    return 'recently';
-  }, [article.published]);
-
-  const handleBookmark = () => {
-    Animated.sequence([
-      Animated.spring(bookmarkAnim, { toValue: 1.3, useNativeDriver: true, friction: 3 }),
-      Animated.spring(bookmarkAnim, { toValue: 1, useNativeDriver: true, friction: 3 }),
-    ]).start();
-    onBookmark(article);
-  };
-
-  const hasImage = article.image_url && !imageError;
+  onBookmark: () => void;
+  onShare: () => void;
+  onReadMore: () => void;
+}) => {
+  const imageHeight = cardHeight * 0.48;
+  const contentHeight = cardHeight * 0.52;
 
   return (
     <View style={[styles.card, { height: cardHeight }]}>
-      {/* Image Section - 48% of card */}
-      <TouchableOpacity 
-        style={styles.imageSection}
-        onPress={() => onOpenArticle(article.link)}
-        activeOpacity={0.95}
-      >
-        {hasImage ? (
+      {/* Image Section */}
+      <View style={[styles.imageSection, { height: imageHeight }]}>
+        {article.image_url ? (
           <Image
             source={{ uri: article.image_url }}
-            style={styles.heroImage}
+            style={styles.image}
             resizeMode="cover"
-            onError={() => setImageError(true)}
           />
         ) : (
-          <View style={[styles.imagePlaceholder, { backgroundColor: categoryColor + '30' }]}>
-            <Ionicons name="newspaper-outline" size={64} color={categoryColor} />
+          <View style={styles.imagePlaceholder}>
+            <Ionicons name="newspaper-outline" size={48} color={COLORS.textMuted} />
           </View>
         )}
         
-        {/* More options button */}
-        <TouchableOpacity style={styles.moreButton}>
-          <Ionicons name="ellipsis-horizontal" size={20} color="#FFFFFF" />
-        </TouchableOpacity>
-      </TouchableOpacity>
+        {/* Gradient overlay */}
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.8)']}
+          style={styles.imageGradient}
+        />
 
-      {/* Content Section - Dark background */}
-      <View style={styles.contentSection}>
-        {/* Source Row with Actions */}
-        <View style={styles.sourceRow}>
-          <View style={styles.sourceLeft}>
-            <View style={[styles.sourceIcon, { backgroundColor: categoryColor }]}>
-              <Text style={styles.sourceIconText}>{article.source.charAt(0)}</Text>
-            </View>
-            <Text style={styles.sourceName}>{article.source}</Text>
-          </View>
-          <View style={styles.actionButtons}>
-            <TouchableOpacity onPress={handleBookmark} style={styles.actionBtn}>
-              <Animated.View style={{ transform: [{ scale: bookmarkAnim }] }}>
-                <Ionicons
-                  name={isBookmarked ? 'bookmark' : 'bookmark-outline'}
-                  size={22}
-                  color={isBookmarked ? '#FF6B35' : '#FFFFFF'}
-                />
-              </Animated.View>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => onShare(article)} style={styles.actionBtn}>
-              <Ionicons name="share-social-outline" size={22} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
+        {/* Source badge */}
+        <View style={styles.sourceBadge}>
+          <Text style={styles.sourceText}>{article.source?.toUpperCase()}</Text>
+        </View>
+
+        {/* Action buttons */}
+        <View style={styles.actionButtons}>
+          <TouchableOpacity onPress={onBookmark} style={styles.actionButton}>
+            <Ionicons
+              name={isBookmarked ? 'bookmark' : 'bookmark-outline'}
+              size={22}
+              color={isBookmarked ? COLORS.primary : COLORS.text}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onShare} style={styles.actionButton}>
+            <Ionicons name="share-outline" size={22} color={COLORS.text} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Content Section */}
+      <View style={[styles.contentSection, { height: contentHeight }]}>
+        {/* Category & Time */}
+        <View style={styles.metaRow}>
+          <Text style={styles.categoryBadge}>{article.category?.toUpperCase()}</Text>
+          <Text style={styles.timeText}>{formatTime(article.published)}</Text>
         </View>
 
         {/* Headline */}
@@ -190,221 +145,157 @@ const NewsCard = React.memo(({
           {article.title}
         </Text>
 
-        {/* Description - Show more content to fill the card */}
-        <Text style={styles.description}>
-          {truncateToWords(article.description, 100)}
+        {/* Description */}
+        <Text style={styles.description} numberOfLines={4}>
+          {truncateText(article.description, 80)}
         </Text>
 
-        {/* Timestamp */}
-        <Text style={styles.timestamp}>{timeAgo()} ago</Text>
+        {/* Read More */}
+        <TouchableOpacity onPress={onReadMore} style={styles.readMoreButton}>
+          <Text style={styles.readMoreText}>Read full story</Text>
+          <Ionicons name="arrow-forward" size={16} color={COLORS.primary} />
+        </TouchableOpacity>
       </View>
-
-      {/* Tap to Read More Bar */}
-      <TouchableOpacity 
-        style={styles.readMoreBar}
-        onPress={() => onOpenArticle(article.link)}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.readMoreText}>Tap to read full story</Text>
-        <Ionicons name="open-outline" size={16} color="#B8B8B8" />
-      </TouchableOpacity>
     </View>
   );
 });
 
-// Loading Skeleton
-const LoadingSkeleton = ({ cardHeight }: { cardHeight: number }) => (
-  <View style={[styles.skeleton, { height: cardHeight }]}>
-    <View style={styles.skeletonImage} />
-    <View style={styles.skeletonContent}>
-      <View style={styles.skeletonSourceRow}>
-        <View style={styles.skeletonCircle} />
-        <View style={[styles.skeletonLine, { width: 80 }]} />
-      </View>
-      <View style={[styles.skeletonLine, { width: '90%', height: 20 }]} />
-      <View style={[styles.skeletonLine, { width: '100%' }]} />
-      <View style={[styles.skeletonLine, { width: '100%' }]} />
-      <View style={[styles.skeletonLine, { width: '70%' }]} />
-    </View>
-  </View>
-);
-
 // Main Home Screen
 export default function HomeScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = true; // Force dark theme for Inshorts style
-  const colors = COLORS.dark;
   const insets = useSafeAreaInsets();
+  const flatListRef = useRef<FlatList>(null);
   
-  // Get categories passed from onboarding (bypasses storage read issues on Android)
+  // Get categories from navigation params (passed from onboarding)
   const { initialCategories } = useLocalSearchParams<{ initialCategories?: string }>();
 
+  // State
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
-  const [preferencesLoaded, setPreferencesLoaded] = useState(false);
-  const [showFeatureOverlay, setShowFeatureOverlay] = useState(false);
-  const flatListRef = useRef<FlatList>(null);
+  const [isReady, setIsReady] = useState(false);
 
-  // Card height: screen - header - tab bar
+  // Calculate card height
+  const TAB_BAR_HEIGHT = 80;
   const HEADER_HEIGHT = 50;
-  const TAB_BAR_HEIGHT = 70;
-  const CARD_HEIGHT = SCREEN_HEIGHT - HEADER_HEIGHT - TAB_BAR_HEIGHT - insets.top;
+  const CARD_HEIGHT = SCREEN_HEIGHT - TAB_BAR_HEIGHT - HEADER_HEIGHT - insets.top;
 
-  // Enterprise-grade news hook - enable initialLoad when categories are available
-  const [newsState, newsActions] = useNews(selectedCategories, {
-    initialLoad: selectedCategories.length > 0,
-    autoRefreshOnReconnect: true,
-    cacheForOffline: true,
-    pageSize: 15,
-  });
+  // News hook - only initialize after categories are loaded
+  const [newsState, newsActions] = useNews(selectedCategories);
 
-  const { articles, loadingState, error, isOffline, isOfflineData, hasMore } = newsState;
-
-  // Shake to refresh
-  const handleShake = useCallback(() => {
-    if (loadingState === 'idle') {
-      if (Platform.OS !== 'web') Vibration.vibrate(100);
-      newsActions.refresh();
-    }
-  }, [loadingState, newsActions]);
-
-  useShakeDetector({ onShake: handleShake });
-
-  // Load preferences on mount - prioritize params from onboarding (fixes Android storage bug)
+  /**
+   * Load preferences on mount
+   * Priority: URL params > Storage > Defaults
+   */
   useEffect(() => {
-    const loadPreferences = async () => {
-      try {
-        // PRIORITY 1: Categories passed directly from onboarding (bypasses storage issues)
-        if (initialCategories && initialCategories.length > 0) {
-          const categoriesFromParams = initialCategories.split(',').filter(c => c.trim());
-          console.log('[Home] Using categories from params:', categoriesFromParams);
-          setSelectedCategories(categoriesFromParams);
-          setPreferencesLoaded(true);
-          
-          // Check for feature overlay using reliable AsyncStorage
-          const shouldShowOverlay = await appStorage.shouldShowFeatureOverlay();
-          if (shouldShowOverlay) {
-            setShowFeatureOverlay(true);
-            await appStorage.setFeatureOverlayShown();
-          }
-          return;
-        }
-        
-        // PRIORITY 2: Read from AsyncStorage (reliable on Android)
-        const preferences = await appStorage.getPreferences();
-        console.log('[Home] Loaded preferences from storage:', preferences?.categories);
-        
-        if (preferences?.categories?.length) {
-          setSelectedCategories(preferences.categories);
-        } else {
-          // PRIORITY 3: Default categories as fallback
-          const defaultCategories = ['politics', 'business', 'technology'];
-          console.log('[Home] No saved categories, using defaults:', defaultCategories);
-          setSelectedCategories(defaultCategories);
-        }
+    const loadData = async () => {
+      console.log('[Home] Loading data...');
+      
+      let categories: string[] = [];
 
-        const shouldShowOverlay = await appStorage.shouldShowFeatureOverlay();
-        if (shouldShowOverlay) {
-          setShowFeatureOverlay(true);
-          await appStorage.setFeatureOverlayShown();
-        }
-
-        setPreferencesLoaded(true);
-      } catch (error) {
-        console.error('Error loading preferences:', error);
-        // Even on error, set default categories so app isn't blank
-        setSelectedCategories(['politics', 'business', 'technology']);
-        setPreferencesLoaded(true);
+      // Priority 1: Categories from URL params (from onboarding)
+      if (initialCategories) {
+        categories = initialCategories.split(',').filter(c => c.trim());
+        console.log('[Home] Using categories from params:', categories);
       }
+
+      // Priority 2: Categories from storage
+      if (categories.length === 0) {
+        const prefs = await Storage.getPreferences();
+        if (prefs?.categories?.length) {
+          categories = prefs.categories;
+          console.log('[Home] Using categories from storage:', categories);
+        }
+      }
+
+      // Priority 3: Default categories
+      if (categories.length === 0) {
+        categories = ['politics', 'business', 'technology'];
+        console.log('[Home] Using default categories:', categories);
+      }
+
+      setSelectedCategories(categories);
+
+      // Load bookmarks
+      const bookmarks = await Storage.getBookmarks();
+      setBookmarkedIds(new Set(bookmarks.map(b => b.id)));
+
+      setIsReady(true);
     };
-    loadPreferences();
+
+    loadData();
   }, [initialCategories]);
 
-  // Trigger fetch when categories are loaded and changed
-  useEffect(() => {
-    if (preferencesLoaded && selectedCategories.length > 0) {
-      console.log('[Home] Categories loaded, fetching news:', selectedCategories);
-      newsActions.refresh();
-    }
-  }, [preferencesLoaded]); // Only depend on preferencesLoaded, not selectedCategories to avoid loop
-  
-  // Handle category changes after initial load
-  const prevCategoriesRef = useRef<string[]>([]);
-  useEffect(() => {
-    if (preferencesLoaded && selectedCategories.length > 0) {
-      const categoriesChanged = 
-        selectedCategories.length !== prevCategoriesRef.current.length ||
-        !selectedCategories.every(c => prevCategoriesRef.current.includes(c));
+  /**
+   * Refresh preferences when screen is focused (returning from settings)
+   */
+  useFocusEffect(
+    useCallback(() => {
+      if (!isReady) return;
       
-      if (categoriesChanged && prevCategoriesRef.current.length > 0) {
-        console.log('[Home] Categories changed, refreshing:', selectedCategories);
-        newsActions.refresh();
-      }
-      prevCategoriesRef.current = selectedCategories;
-    }
-  }, [selectedCategories, preferencesLoaded]);
-
-  // Tab refresh
-  useEffect(() => {
-    const unsubscribe = TabRefreshEvents.subscribe('home', () => {
-      flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
-      newsActions.refresh();
-    });
-    return unsubscribe;
-  }, [newsActions]);
-
-  // Bookmarks
-  useFocusEffect(
-    useCallback(() => {
-      const loadBookmarks = async () => {
-        const bookmarks = await getBookmarks();
-        setBookmarkedIds(new Set(bookmarks.map(b => b.id)));
-      };
-      loadBookmarks();
-    }, [])
-  );
-
-  // Preference changes
-  useFocusEffect(
-    useCallback(() => {
       const checkPreferences = async () => {
-        const prefs = await getPreferences();
+        const prefs = await Storage.getPreferences();
         if (prefs?.categories) {
           const changed =
             prefs.categories.length !== selectedCategories.length ||
             !prefs.categories.every(c => selectedCategories.includes(c));
-          if (changed && selectedCategories.length > 0) {
+          
+          if (changed) {
+            console.log('[Home] Preferences changed, updating...');
             setSelectedCategories(prefs.categories);
             setActiveFilter('all');
           }
         }
       };
       checkPreferences();
-    }, [selectedCategories])
+    }, [isReady, selectedCategories])
   );
 
-  // Handlers
+  /**
+   * Filter articles by category
+   */
+  const filteredArticles = activeFilter === 'all'
+    ? newsState.articles
+    : newsState.articles.filter(a => a.category === activeFilter);
+
+  /**
+   * Handle category filter change
+   */
   const handleFilterChange = (filter: string) => {
     setActiveFilter(filter);
     flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
   };
 
-  const toggleBookmark = async (article: Article) => {
+  /**
+   * Bookmark handling
+   */
+  const handleBookmark = async (article: Article) => {
     if (bookmarkedIds.has(article.id)) {
-      await removeBookmark(article.id);
+      await Storage.removeBookmark(article.id);
       setBookmarkedIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(article.id);
-        return newSet;
+        const next = new Set(prev);
+        next.delete(article.id);
+        return next;
       });
     } else {
-      await addBookmark(article);
-      setBookmarkedIds(prev => new Set(prev).add(article.id));
+      await Storage.addBookmark({
+        id: article.id,
+        title: article.title,
+        description: article.description,
+        link: article.link,
+        published: article.published,
+        source: article.source,
+        category: article.category,
+        image_url: article.image_url,
+      });
+      setBookmarkedIds(prev => new Set([...prev, article.id]));
+      if (Platform.OS !== 'web') Vibration.vibrate(50);
     }
   };
 
-  const shareArticle = async (article: Article) => {
+  /**
+   * Share handling
+   */
+  const handleShare = async (article: Article) => {
     try {
       await Share.share({
         title: article.title,
@@ -416,171 +307,205 @@ export default function HomeScreen() {
     }
   };
 
-  const openArticle = async (url: string) => {
+  /**
+   * Read more handling
+   */
+  const handleReadMore = async (url: string) => {
     try {
-      await WebBrowser.openBrowserAsync(url, {
-        toolbarColor: '#000000',
-        controlsColor: '#FF6B35',
-      });
+      await WebBrowser.openBrowserAsync(url);
     } catch (error) {
-      console.error('Open URL error:', error);
+      console.error('Browser error:', error);
     }
   };
 
-  // Filter articles
-  const filteredArticles = activeFilter === 'all'
-    ? articles
-    : articles.filter(a => a.category.toLowerCase() === activeFilter);
-
-  // Render card
-  const renderCard = useCallback(({ item, index }: { item: Article; index: number }) => (
-    <NewsCard
-      article={item}
-      index={index}
-      cardHeight={CARD_HEIGHT}
-      isBookmarked={bookmarkedIds.has(item.id)}
-      onBookmark={toggleBookmark}
-      onShare={shareArticle}
-      onOpenArticle={openArticle}
-    />
-  ), [bookmarkedIds, CARD_HEIGHT]);
-
-  // Loading state
-  const isInitialLoading = !preferencesLoaded ||
-    (loadingState === 'loading' && articles.length === 0) ||
-    (preferencesLoaded && selectedCategories.length > 0 && articles.length === 0 && loadingState !== 'idle');
-
-  if (isInitialLoading && !error) {
+  /**
+   * Render loading state
+   */
+  if (!isReady || (newsState.loading === 'loading' && newsState.articles.length === 0)) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <StatusBar barStyle="light-content" backgroundColor="#000000" />
-        <LoadingSkeleton cardHeight={CARD_HEIGHT} />
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
+        <SafeAreaView style={styles.container}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={COLORS.primary} />
+            <Text style={styles.loadingText}>Loading news...</Text>
+          </View>
+        </SafeAreaView>
       </View>
     );
   }
 
+  /**
+   * Render error state
+   */
+  if (newsState.loading === 'error' && newsState.articles.length === 0) {
+    return (
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
+        <SafeAreaView style={styles.container}>
+          <View style={styles.errorContainer}>
+            <Ionicons name="cloud-offline-outline" size={64} color={COLORS.textMuted} />
+            <Text style={styles.errorTitle}>Unable to Load News</Text>
+            <Text style={styles.errorMessage}>{newsState.error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={newsActions.retry}>
+              <Text style={styles.retryText}>Try Again</Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </View>
+    );
+  }
+
+  /**
+   * Render main content
+   */
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle="light-content" backgroundColor="#000000" />
-
-      {/* Feature Overlay */}
-      <FeatureOverlay visible={showFeatureOverlay} onDismiss={() => setShowFeatureOverlay(false)} />
-
-      {/* Network Banner */}
-      <NetworkStatusBanner onRetry={newsActions.retry} />
-
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
+      
       {/* Header with Category Pills */}
       <View style={[styles.header, { paddingTop: insets.top }]}>
         <FlatList
           horizontal
           data={[
-            { id: 'all', name: 'My Feed', trending: true },
+            { id: 'all', name: 'My Feed' },
             ...CATEGORIES.filter(c => selectedCategories.includes(c.id))
           ]}
           keyExtractor={(item) => item.id}
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.categoryList}
-          renderItem={({ item, index }) => {
-            const isActive = activeFilter === item.id;
-            const isTrending = item.trending;
-            return (
-              <TouchableOpacity
-                style={styles.categoryItem}
-                onPress={() => handleFilterChange(item.id)}
-              >
-                {isTrending && index === 0 && (
-                  <View style={styles.trendingDot} />
-                )}
-                <Text style={[
-                  styles.categoryText,
-                  isActive && styles.categoryTextActive
-                ]}>
-                  {item.name}
-                </Text>
-              </TouchableOpacity>
-            );
-          }}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.categoryItem}
+              onPress={() => handleFilterChange(item.id)}
+            >
+              <Text style={[
+                styles.categoryText,
+                activeFilter === item.id && styles.categoryTextActive
+              ]}>
+                {item.name}
+              </Text>
+            </TouchableOpacity>
+          )}
         />
-        {isOfflineData && (
-          <View style={styles.offlineIndicator}>
-            <Ionicons name="cloud-offline" size={16} color="#888" />
-          </View>
-        )}
       </View>
 
+      {/* Offline Banner */}
+      {newsState.isOfflineData && (
+        <View style={styles.offlineBanner}>
+          <Ionicons name="cloud-offline-outline" size={16} color={COLORS.text} />
+          <Text style={styles.offlineBannerText}>Showing saved articles</Text>
+        </View>
+      )}
+
       {/* Error Banner */}
-      {error && !isOfflineData && (
+      {newsState.error && !newsState.isOfflineData && (
         <View style={styles.errorBanner}>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryBtn} onPress={newsActions.retry}>
-            <Text style={styles.retryBtnText}>Retry</Text>
+          <Text style={styles.errorBannerText}>{newsState.error}</Text>
+          <TouchableOpacity onPress={newsActions.retry}>
+            <Text style={styles.retryLink}>Retry</Text>
           </TouchableOpacity>
         </View>
       )}
 
-      {/* News Feed */}
-      <View style={styles.feedContainer}>
-        {filteredArticles.length > 0 ? (
-          <FlatList
-            ref={flatListRef}
-            data={filteredArticles}
-            renderItem={renderCard}
-            keyExtractor={(item) => item.id}
-            pagingEnabled
-            showsVerticalScrollIndicator={false}
-            snapToInterval={CARD_HEIGHT}
-            decelerationRate="fast"
-            scrollEventThrottle={16}
-            onEndReached={() => !isOffline && newsActions.loadMore()}
-            onEndReachedThreshold={0.5}
-            ListFooterComponent={() => (
-              <View style={[styles.footer, { height: CARD_HEIGHT }]}>
-                {loadingState === 'loading-more' ? (
-                  <LoadingSkeleton cardHeight={CARD_HEIGHT * 0.9} />
-                ) : (
-                  <View style={styles.endMessage}>
-                    <Ionicons name="checkmark-circle" size={48} color="#FF6B35" />
-                    <Text style={styles.endTitle}>You're all caught up!</Text>
-                    <Text style={styles.endSubtitle}>Swipe down to refresh</Text>
-                  </View>
-                )}
-              </View>
-            )}
-            refreshControl={
-              <RefreshControl
-                refreshing={loadingState === 'refreshing'}
-                onRefresh={newsActions.refresh}
-                tintColor="#FF6B35"
-                colors={['#FF6B35']}
-              />
-            }
+      {/* Articles List */}
+      <FlatList
+        ref={flatListRef}
+        data={filteredArticles}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <ArticleCard
+            article={item}
+            cardHeight={CARD_HEIGHT}
+            isBookmarked={bookmarkedIds.has(item.id)}
+            onBookmark={() => handleBookmark(item)}
+            onShare={() => handleShare(item)}
+            onReadMore={() => handleReadMore(item.link)}
           />
-        ) : (
-          <View style={styles.emptyState}>
-            <Ionicons name="newspaper-outline" size={64} color="#444" />
+        )}
+        pagingEnabled
+        showsVerticalScrollIndicator={false}
+        snapToInterval={CARD_HEIGHT}
+        decelerationRate="fast"
+        refreshControl={
+          <RefreshControl
+            refreshing={newsState.loading === 'refreshing'}
+            onRefresh={newsActions.refresh}
+            tintColor={COLORS.primary}
+            colors={[COLORS.primary]}
+          />
+        }
+        onEndReached={newsActions.loadMore}
+        onEndReachedThreshold={0.5}
+        ListEmptyComponent={
+          <View style={[styles.emptyContainer, { height: CARD_HEIGHT }]}>
+            <Ionicons name="newspaper-outline" size={64} color={COLORS.textMuted} />
             <Text style={styles.emptyTitle}>No Stories Found</Text>
-            <Text style={styles.emptySubtitle}>
-              {isOffline ? 'Connect to the internet to load stories.' : 'Swipe down to refresh.'}
+            <Text style={styles.emptyMessage}>
+              {selectedCategories.length === 0
+                ? 'Please select categories in settings'
+                : 'Pull down to refresh'}
             </Text>
           </View>
-        )}
-      </View>
+        }
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#000000',
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  
+  // Loading
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: COLORS.textSecondary,
+  },
+
+  // Error
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginTop: 16,
+  },
+  errorMessage: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  retryButton: {
+    marginTop: 24,
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    backgroundColor: COLORS.primary,
+    borderRadius: 8,
+  },
+  retryText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text,
   },
 
   // Header
   header: {
-    backgroundColor: '#000000',
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderBottomWidth: 0,
+    backgroundColor: COLORS.background,
   },
   categoryList: {
     paddingHorizontal: 16,
@@ -588,74 +513,97 @@ const styles = StyleSheet.create({
     gap: 24,
   },
   categoryItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  trendingDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#E53935',
-    marginRight: 6,
+    paddingVertical: 4,
   },
   categoryText: {
     fontSize: 16,
-    color: '#888888',
     fontWeight: '500',
+    color: COLORS.textMuted,
   },
   categoryTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  offlineIndicator: {
-    paddingRight: 16,
+    color: COLORS.text,
+    fontWeight: '700',
   },
 
-  // Error Banner
+  // Banners
+  offlineBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 8,
+    backgroundColor: COLORS.cardBorder,
+  },
+  offlineBannerText: {
+    fontSize: 12,
+    color: COLORS.text,
+  },
   errorBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    justifyContent: 'center',
+    gap: 12,
     paddingVertical: 10,
-    backgroundColor: '#1A1A1A',
+    backgroundColor: COLORS.error + '20',
   },
-  errorText: { color: '#FF6B35', fontSize: 13, flex: 1 },
-  retryBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    backgroundColor: '#FF6B35',
-    borderRadius: 16,
+  errorBannerText: {
+    fontSize: 12,
+    color: COLORS.error,
   },
-  retryBtnText: { color: '#FFF', fontSize: 13, fontWeight: '600' },
-
-  // Feed
-  feedContainer: { flex: 1 },
+  retryLink: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
 
   // Card
   card: {
-    width: SCREEN_WIDTH,
-    backgroundColor: '#000000',
+    backgroundColor: COLORS.card,
   },
-
-  // Image Section
   imageSection: {
-    height: '48%',
     position: 'relative',
   },
-  heroImage: {
+  image: {
     width: '100%',
     height: '100%',
   },
   imagePlaceholder: {
-    flex: 1,
+    width: '100%',
+    height: '100%',
+    backgroundColor: COLORS.cardBorder,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  moreButton: {
+  imageGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '50%',
+  },
+  sourceBadge: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  sourceText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.text,
+    letterSpacing: 0.5,
+  },
+  actionButtons: {
     position: 'absolute',
     top: 12,
     right: 12,
+    flexDirection: 'row',
+    gap: 8,
+  },
+  actionButton: {
     width: 36,
     height: 36,
     borderRadius: 18,
@@ -664,165 +612,69 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  // Content Section
+  // Content
   contentSection: {
-    flex: 1,
-    backgroundColor: '#0A0A0A',
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 8,
-  },
-
-  // Source Row
-  sourceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    padding: 16,
     justifyContent: 'space-between',
-    marginBottom: 12,
   },
-  sourceLeft: {
+  metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
   },
-  sourceIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 6,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-  },
-  sourceIconText: {
-    color: '#FFFFFF',
-    fontSize: 14,
+  categoryBadge: {
+    fontSize: 11,
     fontWeight: '700',
+    color: COLORS.primary,
+    letterSpacing: 0.5,
   },
-  sourceName: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '600',
+  timeText: {
+    fontSize: 12,
+    color: COLORS.textMuted,
   },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  actionBtn: {
-    padding: 4,
-  },
-
-  // Headline
   headline: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '700',
-    color: '#FFFFFF',
-    lineHeight: 30,
-    marginBottom: 10,
+    color: COLORS.text,
+    lineHeight: 26,
     fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
-  },
-
-  // Description
-  description: {
-    fontSize: 15,
-    color: '#B8B8B8',
-    lineHeight: 24,
-    flex: 1,
-  },
-
-  // Timestamp
-  timestamp: {
-    fontSize: 13,
-    color: '#666666',
     marginTop: 8,
   },
-
-  // Read More Bar
-  readMoreBar: {
+  description: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    lineHeight: 22,
+    marginTop: 8,
+    flex: 1,
+  },
+  readMoreButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#1A1A1A',
-    paddingVertical: 14,
-    borderTopWidth: 1,
-    borderTopColor: '#222222',
+    gap: 6,
+    marginTop: 12,
   },
   readMoreText: {
     fontSize: 14,
-    color: '#B8B8B8',
-    fontWeight: '500',
+    fontWeight: '600',
+    color: COLORS.primary,
   },
 
-  // Skeleton
-  skeleton: {
-    width: SCREEN_WIDTH,
-    backgroundColor: '#000000',
-  },
-  skeletonImage: {
-    height: '48%',
-    backgroundColor: '#1A1A1A',
-  },
-  skeletonContent: {
-    flex: 1,
-    backgroundColor: '#0A0A0A',
-    padding: 16,
-    gap: 12,
-  },
-  skeletonSourceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  skeletonCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 6,
-    backgroundColor: '#222222',
-  },
-  skeletonLine: {
-    height: 14,
-    borderRadius: 4,
-    backgroundColor: '#222222',
-  },
-
-  // Empty State
-  emptyState: {
-    flex: 1,
-    alignItems: 'center',
+  // Empty
+  emptyContainer: {
     justifyContent: 'center',
-    paddingHorizontal: 40,
-    backgroundColor: '#000000',
+    alignItems: 'center',
+    padding: 32,
   },
   emptyTitle: {
     fontSize: 20,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginTop: 20,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    color: '#666666',
-    marginTop: 8,
-    textAlign: 'center',
-  },
-
-  // Footer
-  footer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#000000',
-  },
-  endMessage: {
-    alignItems: 'center',
-  },
-  endTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontWeight: '600',
+    color: COLORS.text,
     marginTop: 16,
   },
-  endSubtitle: {
+  emptyMessage: {
     fontSize: 14,
-    color: '#666666',
+    color: COLORS.textSecondary,
+    textAlign: 'center',
     marginTop: 8,
   },
 });
