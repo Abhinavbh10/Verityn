@@ -8,7 +8,6 @@ import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
 import { format, parseISO, isValid } from 'date-fns';
 import * as WebBrowser from 'expo-web-browser';
-import Constants from 'expo-constants';
 import { useFocusEffect } from 'expo-router';
 import { addBookmark, removeBookmark, getBookmarks } from '../../src/utils/bookmarks';
 import { getKeywords, addKeyword, removeKeyword, SUGGESTED_KEYWORDS } from '../../src/utils/keywords';
@@ -43,7 +42,8 @@ const CATEGORIES = [
   { id: 'science', color: '#0891B2' },
 ];
 
-const API_BASE_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL || 'https://news-feed-eu.preview.emergentagent.com';
+// HARDCODED for reliable APK builds
+const API_BASE_URL = 'https://news-feed-eu.preview.emergentagent.com';
 
 export default function ForYouScreen() {
   const { colors, isDark } = useTheme();

@@ -3,12 +3,10 @@
  * Centralized API service with retry logic, caching, and error handling
  */
 
-import Constants from 'expo-constants';
 import { NetworkManager } from './NetworkManager';
 
-const API_BASE_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 
-                     process.env.EXPO_PUBLIC_BACKEND_URL || 
-                     'https://news-feed-eu.preview.emergentagent.com';
+// HARDCODED for reliable APK builds - environment variables are unreliable in Expo standalone builds
+const API_BASE_URL = 'https://news-feed-eu.preview.emergentagent.com';
 
 export interface Article {
   id: string;
