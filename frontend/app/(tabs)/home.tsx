@@ -278,6 +278,11 @@ export default function HomeScreen() {
         
         if (preferences?.categories?.length) {
           setSelectedCategories(preferences.categories);
+        } else {
+          // DEFAULT CATEGORIES for first launch - ensures news always loads
+          const defaultCategories = ['politics', 'business', 'technology'];
+          console.log('[Home] No saved categories, using defaults:', defaultCategories);
+          setSelectedCategories(defaultCategories);
         }
 
         const shouldShowOverlay = await secureStorage.getItem('verityn_show_feature_overlay');
@@ -289,6 +294,8 @@ export default function HomeScreen() {
         setPreferencesLoaded(true);
       } catch (error) {
         console.error('Error loading preferences:', error);
+        // Even on error, set default categories so app isn't blank
+        setSelectedCategories(['politics', 'business', 'technology']);
         setPreferencesLoaded(true);
       }
     };
